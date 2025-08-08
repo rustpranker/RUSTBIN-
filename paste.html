@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>View Paste - Rustbin</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase config -->
+  <script src="firebase-config.js"></script>
+
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 20px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .back-button {
+      background-color: red;
+      border: none;
+      padding: 10px 20px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    .author {
+      color: #ff5555;
+      margin-bottom: 20px;
+      font-style: italic;
+    }
+    .content {
+      background-color: #111;
+      padding: 15px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 16px;
+    }
+    .error {
+      color: #dc3545;
+      font-weight: bold;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <button class="back-button" onclick="goHome()">← Back to Home</button>
+
+  <div id="paste-container">
+    <!-- Здесь будет паста -->
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    function getPasteId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    function showError(message) {
+      const container = document.getElementById('paste-container');
+      container.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function loadPaste(id) {
+      db.collection('pastes').doc(id).get()
+        .then(doc => {
+          if (!doc.exists) {
+            showError('Paste not found');
+            return;
+          }
+          const data = doc.data();
+          const container = document.getElementById('paste-container');
+          container.innerHTML = `
+            <h1>${data.title || 'Untitled'}</h1>
+            <div class="author">Posted by: ${data.username || 'Anonymous'}</div>
+            <pre class="content">${data.content || ''}</pre>
+          `;
+        })
+        .catch(err => {
+          showError('Error loading paste: ' + err.message);
+          console.error(err);
+        });
+    }
+
+    window.onload = () => {
+      const pasteId = getPasteId();
+      if (!pasteId) {
+        // Если ID нет — сразу на главную
+        window.location.href = 'index.html';
+        return;
+      }
+      loadPaste(pasteId);
+    };
+  </script>
+</body>
+</html>

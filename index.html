@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rustbin</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase config -->
+  <script src="firebase-config.js"></script>
+
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+    }
+
+    .navbar {
+      background-color: #111;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin: 0 10px;
+      font-weight: bold;
+    }
+    .navbar a:hover {
+      color: red;
+    }
+
+    .title-container {
+      text-align: center;
+      margin-top: 50px;
+    }
+    .gradient-text {
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(270deg, red, white, red);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 4s ease infinite;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .credit-text {
+      font-size: 14px;
+      color: red;
+      margin-top: 10px;
+    }
+    .search-bar {
+      margin-top: 20px;
+    }
+    .search-bar input {
+      padding: 8px;
+      width: 200px;
+      border-radius: 4px;
+      border: none;
+      outline: none;
+    }
+    .search-bar button {
+      padding: 8px 12px;
+      background-color: red;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 6px;
+      font-weight: bold;
+    }
+    .search-bar button:hover {
+      background-color: #c00;
+    }
+    .pastes-list {
+      margin: 40px auto;
+      max-width: 600px;
+    }
+    .paste-preview {
+      background-color: #111;
+      padding: 10px 15px;
+      margin: 10px 0;
+      border: 1px solid #333;
+      border-left: 5px solid red;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-radius: 4px;
+      font-weight: bold;
+      user-select: none;
+    }
+    .paste-preview:hover {
+      background-color: #1a1a1a;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-left">
+      <a href="index.html">Home</a>
+      <a href="create.html">Add Paste</a>
+    </div>
+    <div class="nav-right" id="auth-buttons">
+      <a href="register.html">Register</a>
+      <a href="login.html">Login</a>
+    </div>
+  </nav>
+
+  <div class="title-container">
+    <h1 class="gradient-text">RUSTBIN</h1>
+    <img src="logo.png" alt="logo" style="max-width: 150px; margin: 20px auto;" />
+    <p class="credit-text">
+      created by kostya rjaviy, destroymymemories<br />
+      contact dc: wg2d, destroymymemories
+    </p>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search pastes by title..." />
+      <button onclick="searchPastes()">Search</button>
+    </div>
+  </div>
+
+  <div id="pastes-list" class="pastes-list"></div>
+
+  <script>
+    const authButtonsDiv = document.getElementById('auth-buttons');
+    const pastesList = document.getElementById('pastes-list');
+    const searchInput = document.getElementById('searchInput');
+    let allPastes = [];
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        authButtonsDiv.innerHTML = `
+          <span style="color: red; font-weight: bold;">${user.displayName || user.email}</span>
+          <button id="logoutBtn" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
+        `;
+        document.getElementById('logoutBtn').onclick = () => {
+          firebase.auth().signOut();
+        };
+      } else {
+        authButtonsDiv.innerHTML = `
+          <a href="register.html">Register</a>
+          <a href="login.html">Login</a>
+        `;
+      }
+    });
+
+    function loadPastes() {
+      db.collection('pastes').orderBy('createdAt', 'desc').get()
+        .then(snapshot => {
+          allPastes = [];
+          snapshot.forEach(doc => {
+            const paste = doc.data();
+            allPastes.push({
+              id: doc.id,
+              title: paste.title || 'Untitled',
+              content: paste.content || '',
+              createdAt: paste.createdAt ? paste.createdAt.toMillis() : 0
+            });
+          });
+          displayPastes(allPastes);
+        })
+        .catch(err => {
+          pastesList.innerHTML = 'Ошибка загрузки паст: ' + err.message;
+          console.error(err);
+        });
+    }
+
+    function displayPastes(pastes) {
+      pastesList.innerHTML = '';
+      if (pastes.length === 0) {
+        pastesList.textContent = 'Пасты не найдены.';
+        return;
+      }
+      pastes.forEach(paste => {
+        const div = document.createElement('div');
+        div.className = 'paste-preview';
+        div.textContent = paste.title;
+        div.onclick = () => {
+          window.location.href = `paste.html?id=${paste.id}`;
+        };
+        pastesList.appendChild(div);
+      });
+    }
+
+    function searchPastes() {
+      const query = searchInput.value.trim().toLowerCase();
+      if (!query) {
+        displayPastes(allPastes);
+        return;
+      }
+      const filtered = allPastes.filter(p => p.title.toLowerCase().includes(query));
+      displayPastes(filtered);
+    }
+
+    window.onload = loadPastes;
+  </script>
+</body>
+</html>
