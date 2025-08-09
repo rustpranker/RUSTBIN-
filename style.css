@@ -96,3 +96,7 @@ nav a {
 footer {
   margin-top: 50px;
 }
+.role-admin { color: red; }
+.role-coowner { color: purple; }
+.role-coder { color: darkgreen; } /* темно-зеленый */
+.role-rich { color: yellow; }
