@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Users - Rustbin</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase config -->
+  <script src="firebase-config.js"></script>
+
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0; 
+      padding: 0;
+    }
+    .navbar {
+      background-color: #111;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin: 0 10px;
+      font-weight: bold;
+    }
+    .navbar a:hover {
+      color: red;
+    }
+
+    .title-container {
+      text-align: center;
+      margin-top: 50px;
+    }
+    .gradient-text {
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(270deg, red, white, red);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 4s ease infinite;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .users-list {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #111;
+      border: 1px solid #333;
+      border-left: 5px solid red;
+      border-radius: 4px;
+      padding: 20px;
+      font-weight: bold;
+    }
+
+    .user-item {
+      padding: 10px 15px;
+      border-bottom: 1px solid #333;
+      cursor: default;
+      user-select: none;
+      color: white;
+    }
+    .user-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-left">
+      <a href="index.html">Home</a>
+      <a href="create.html">Add Paste</a>
+      <a href="users.html">Users</a>
+    </div>
+    <div class="nav-right" id="auth-buttons">
+      <a href="register.html">Register</a>
+      <a href="login.html">Login</a>
+    </div>
+  </nav>
+
+  <div class="title-container">
+    <h1 class="gradient-text">Registered Users</h1>
+  </div>
+
+  <div id="users-list" class="users-list">Loading users...</div>
+
+  <script>
+    const db = firebase.firestore();
+    const usersList = document.getElementById('users-list');
+
+    function loadUsers() {
+      db.collection('users').get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            usersList.textContent = 'Пользователи не найдены.';
+            return;
+          }
+          usersList.innerHTML = '';
+          snapshot.forEach(doc => {
+            const user = doc.data();
+            const div = document.createElement('div');
+            div.className = 'user-item';
+            div.textContent = user.username || '(no username)';
+            usersList.appendChild(div);
+          });
+        })
+        .catch(err => {
+          usersList.textContent = 'Ошибка загрузки пользователей: ' + err.message;
+          console.error(err);
+        });
+    }
+
+    window.onload = loadUsers;
+  </script>
+</body>
+</html>
