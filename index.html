@@ -107,7 +107,7 @@
     /* Роли - цвет ника */
     .role-admin { color: red; }
     .role-coowner { color: purple; }
-    .role-coder { color: green; }
+    .role-coder { color: darkgreen; }
     .role-rich { color: yellow; }
 
     /* Сообщения успеха и ошибки */
@@ -173,6 +173,7 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // Предопределённые UID и роли для проверки
     const rolesMap = {
       "ZJl09Nb8cx": "admin",
       "N8Jxcl0z6d": "coowner",
@@ -187,63 +188,49 @@
       "rich": "role-rich"
     };
 
-    // Отобразить меню авторизации/пользователя с цветом ника по uid
-    function updateAuthUI(user, roleName = '') {
-      let roleClass = '';
-      if (roleName && rolesColorClass[roleName]) {
-        roleClass = rolesColorClass[roleName];
-      } else if(user) {
-        const roleFromMap = rolesMap[user.uid];
-        roleClass = rolesColorClass[roleFromMap] || '';
-      }
-
-      authButtonsDiv.innerHTML = `
-        <span class="${roleClass}">${user.displayName || user.email}</span>
-        <button id="logoutBtn" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
-      `;
-
-      document.getElementById('logoutBtn').onclick = () => {
-        firebase.auth().signOut();
-      };
-    }
-
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        updateAuthUI(user);
-      } else {
+    // Обновить UI авторизации с цветом ника (из Firestore)
+    async function updateAuthUI(user) {
+      if (!user) {
         authButtonsDiv.innerHTML = `
           <a href="register.html">Register</a>
           <a href="login.html">Login</a>
         `;
-      }
-      roleStatus.textContent = '';
-      roleStatus.className = '';
-      roleInput.value = '';
-    });
-
-    getRoleBtn.onclick = () => {
-      const enteredUID = roleInput.value.trim();
-      if (!enteredUID) {
-        roleStatus.textContent = 'Введите UID';
-        roleStatus.className = 'error';
         return;
       }
-      const role = rolesMap[enteredUID];
-      if (role) {
-        roleStatus.textContent = `Successful! you get ${role}`;
-        roleStatus.className = 'success';
 
-        // Если авторизован пользователь и вводит свой uid — меняем цвет ника
-        const user = auth.currentUser;
-        if(user && user.uid === enteredUID) {
-          updateAuthUI(user, role);
+      try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        let role = null;
+        if (userDoc.exists && userDoc.data().role) {
+          role = userDoc.data().role;
+        } else if (rolesMap[user.uid]) {
+          role = rolesMap[user.uid];
         }
-      } else {
-        roleStatus.textContent = 'Incorrect!';
-        roleStatus.className = 'error';
-      }
-    };
 
+        const roleClass = role && rolesColorClass[role] ? rolesColorClass[role] : '';
+
+        authButtonsDiv.innerHTML = `
+          <span class="${roleClass}">${user.displayName || user.email}</span>
+          <button id="logoutBtn" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
+        `;
+
+        document.getElementById('logoutBtn').onclick = () => {
+          firebase.auth().signOut();
+        };
+      } catch (error) {
+        console.error('Error getting role from Firestore:', error);
+        // fallback без роли
+        authButtonsDiv.innerHTML = `
+          <span>${user.displayName || user.email}</span>
+          <button id="logoutBtn" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
+        `;
+        document.getElementById('logoutBtn').onclick = () => {
+          firebase.auth().signOut();
+        };
+      }
+    }
+
+    // Получить и отобразить пасты
     function loadPastes() {
       db.collection('pastes').orderBy('createdAt', 'desc').get()
         .then(snapshot => {
@@ -265,6 +252,7 @@
         });
     }
 
+    // Отобразить пасты
     function displayPastes(pastes) {
       pastesList.innerHTML = '';
       if (pastes.length === 0) {
@@ -282,6 +270,7 @@
       });
     }
 
+    // Поиск паст
     function searchPastes() {
       const query = searchInput.value.trim().toLowerCase();
       if (!query) {
@@ -292,7 +281,70 @@
       displayPastes(filtered);
     }
 
+    // Обработчик нажатия на Get Role
+    getRoleBtn.onclick = async () => {
+      const enteredUID = roleInput.value.trim();
+      if (!enteredUID) {
+        roleStatus.textContent = 'Введите UID';
+        roleStatus.className = 'error';
+        return;
+      }
+      const role = rolesMap[enteredUID];
+      if (!role) {
+        roleStatus.textContent = 'Incorrect!';
+        roleStatus.className = 'error';
+        return;
+      }
+
+      const user = auth.currentUser;
+      if (!user) {
+        roleStatus.textContent = 'Вы должны войти в аккаунт';
+        roleStatus.className = 'error';
+        return;
+      }
+
+      if (user.uid !== enteredUID) {
+        roleStatus.textContent = 'Введённый UID не совпадает с вашим аккаунтом';
+        roleStatus.className = 'error';
+        return;
+      }
+
+      try {
+        const userRef = db.collection('users').doc(user.uid);
+        const userDoc = await userRef.get();
+
+        if (userDoc.exists && userDoc.data().role === role) {
+          roleStatus.textContent = `You already have the role "${role}"`;
+          roleStatus.className = 'error';
+          return;
+        }
+
+        // Обновляем роль в Firestore
+        await userRef.set({ role }, { merge: true });
+
+        // Обновляем UI с новым цветом ника
+        updateAuthUI(user);
+
+        roleStatus.textContent = `Successful! You got the role "${role}"`;
+        roleStatus.className = 'success';
+        roleInput.value = '';
+
+      } catch (error) {
+        console.error('Error setting role:', error);
+        roleStatus.textContent = 'Ошибка при получении роли';
+        roleStatus.className = 'error';
+      }
+    };
+
+    // Обработка авторизации
+    firebase.auth().onAuthStateChanged(user => {
+      updateAuthUI(user);
+      roleStatus.textContent = '';
+      roleStatus.className = '';
+      roleInput.value = '';
+      loadPastes();
+    });
+
     window.onload = loadPastes;
   </script>
 </body>
-</html>
