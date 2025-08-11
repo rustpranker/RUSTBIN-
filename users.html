@@ -4,13 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Users - Rustbin</title>
-  <link rel="stylesheet" href="style.css" />
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase config -->
   <script src="firebase-config.js"></script>
 
   <style>
@@ -18,34 +17,18 @@
       background-color: #000;
       color: white;
       font-family: Arial, sans-serif;
-      margin: 0; 
-      padding: 0;
-    }
-    .navbar {
-      background-color: #111;
-      padding: 10px 20px;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
     }
-    .navbar a {
-      color: white;
-      text-decoration: none;
-      margin: 0 10px;
+    h1 {
+      font-size: 40px;
       font-weight: bold;
-    }
-    .navbar a:hover {
-      color: #8e44ad; /* фиолетовый при ховере */
-    }
-
-    .title-container {
-      text-align: center;
-      margin-top: 50px;
-    }
-    .gradient-text {
-      font-size: 48px;
-      font-weight: bold;
-      background: linear-gradient(270deg, #8e44ad, #ffffff, #8e44ad);
+      margin-bottom: 25px;
+      background: linear-gradient(270deg, #8e44ad, #ffffff);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -56,73 +39,148 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-
-    .users-list {
-      max-width: 600px;
-      margin: 40px auto;
+    #users-list {
+      width: 100%;
+      max-width: 700px;
       background-color: #111;
-      border: 1px solid #333;
-      border-left: 5px solid #8e44ad; /* фиолетовая линия */
-      border-radius: 4px;
+      border-radius: 8px;
       padding: 20px;
-      font-weight: bold;
+      box-shadow: 0 0 20px #8e44ad;
+      box-sizing: border-box;
     }
-
     .user-item {
-      padding: 10px 15px;
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 15px;
       border-bottom: 1px solid #333;
-      cursor: default;
-      user-select: none;
+      font-weight: bold;
+      font-family: monospace;
+    }
+    .user-item:last-child { border-bottom: none; }
+    .user-role {
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      min-width: 90px;
+      text-align: center;
+    }
+    .role-admin { background-color: #9b59b6; color: #fff; }
+    .role-coowner { background-color: #8e44ad; color: #fff; }
+    .role-coder { background-color: #6a1b9a; color: #fff; }
+    .role-rich { background-color: #4a148c; color: #fff; }
+    .role-user { background-color: #222; color: #bbb; font-weight: normal; }
+    #pagination {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #pagination button {
+      background-color: #222;
+      color: #8e44ad;
+      border: 1px solid #8e44ad;
+      border-radius: 6px;
+      padding: 8px 14px;
+      margin: 0 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: monospace;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    #pagination button:hover {
+      background-color: #8e44ad;
       color: white;
     }
-    .user-item:last-child {
-      border-bottom: none;
+    #pagination button.active {
+      background-color: #8e44ad;
+      color: white;
+      cursor: default;
     }
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <div class="nav-left">
-      <a href="index.html">Home</a>
-      <a href="create.html">Add Paste</a>
-      <a href="users.html">Users</a>
-    </div>
-    <div class="nav-right" id="auth-buttons">
-      <a href="register.html">Register</a>
-      <a href="login.html">Login</a>
-    </div>
-  </nav>
-
-  <div class="title-container">
-    <h1 class="gradient-text">Registered Users</h1>
-  </div>
-
-  <div id="users-list" class="users-list">Loading users...</div>
+  <h1>Users</h1>
+  <div id="users-list">Loading users...</div>
+  <div id="pagination"></div>
 
   <script>
     const db = firebase.firestore();
     const usersList = document.getElementById('users-list');
+    const pagination = document.getElementById('pagination');
+
+    let allUsers = [];
+    let currentPage = 1;
+    const itemsPerPage = 15;
+
+    const roleColorClass = {
+      admin: 'role-admin',
+      coowner: 'role-coowner',
+      coder: 'role-coder',
+      rich: 'role-rich',
+      user: 'role-user',
+    };
 
     function loadUsers() {
-      db.collection('users').get()
+      usersList.textContent = 'Loading users...';
+      db.collection('users').orderBy('createdAt', 'desc').get()
         .then(snapshot => {
-          if (snapshot.empty) {
-            usersList.textContent = 'Пользователи не найдены.';
-            return;
-          }
-          usersList.innerHTML = '';
+          allUsers = [];
           snapshot.forEach(doc => {
-            const user = doc.data();
-            const div = document.createElement('div');
-            div.className = 'user-item';
-            div.textContent = user.username || '(no username)';
-            usersList.appendChild(div);
+            const data = doc.data();
+            allUsers.push({
+              uid: doc.id,
+              name: data.username || data.displayName || 'Unknown',
+              role: data.role || 'user',
+              createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+            });
           });
+          if(allUsers.length === 0) {
+            usersList.textContent = 'No users found.';
+          } else {
+            renderUsers();
+            renderPagination();
+          }
         })
-        .catch(err => {
-          usersList.textContent = 'Ошибка загрузки пользователей: ' + err.message;
-          console.error(err);
+        .catch(() => {
+          usersList.textContent = 'Error loading users.';
         });
+    }
+
+    function renderUsers() {
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const pagedUsers = allUsers.slice(start, end);
+
+      usersList.innerHTML = '';
+      pagedUsers.forEach(user => {
+        const div = document.createElement('div');
+        div.className = 'user-item';
+        const roleClass = roleColorClass[user.role.toLowerCase()] || roleColorClass.user;
+        div.innerHTML = `
+          <div class="user-name">${user.name}</div>
+          <div class="user-role ${roleClass}">${user.role}</div>
+        `;
+        usersList.appendChild(div);
+      });
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(allUsers.length / itemsPerPage);
+      pagination.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      for(let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if(i === currentPage) btn.classList.add('active');
+        btn.onclick = () => {
+          currentPage = i;
+          renderUsers();
+          renderPagination();
+          window.scrollTo({top:0, behavior:'smooth'});
+        };
+        pagination.appendChild(btn);
+      }
     }
 
     window.onload = loadUsers;
