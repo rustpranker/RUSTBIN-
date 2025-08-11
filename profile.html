@@ -123,8 +123,13 @@
       transition: background-color 0.3s ease;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       background-color: #6a1b9a;
+    }
+
+    button:disabled {
+      background-color: #4a148c;
+      cursor: not-allowed;
     }
 
     .info {
@@ -157,6 +162,15 @@
     #userPastesList > div:hover {
       color: #8e44ad;
       text-decoration: underline;
+    }
+
+    #backHomeBtn {
+      margin-top: 15px;
+      background-color: #555;
+    }
+
+    #backHomeBtn:hover {
+      background-color: #888;
     }
 
     @media screen and (max-width: 600px) {
@@ -203,6 +217,7 @@
       <div class="info" id="registrationDate">Registration Date: --</div>
 
       <button id="saveProfileBtn">Save Profile</button>
+      <button id="backHomeBtn" type="button">Back to Home</button>
 
       <div class="success" id="successMsg" style="display:none;">Profile saved successfully!</div>
       <div class="error" id="errorMsg" style="display:none;"></div>
@@ -263,4 +278,173 @@
         }
       }
 
-      for(let i = 0; i < dotsCount; i
+      for(let i = 0; i < dotsCount; i++) {
+        dots.push(new Dot());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        dots.forEach(dot => {
+          dot.update();
+          dot.draw();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
+  </script>
+
+  <script>
+    // Инициализация Firebase
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Элементы
+    const avatarImg = document.getElementById('avatar');
+    const avatarInput = document.getElementById('avatarInput');
+    const displayNameInput = document.getElementById('displayNameInput');
+    const colorSelect = document.getElementById('colorSelect');
+    const descriptionInput = document.getElementById('descriptionInput');
+    const registrationDateDiv = document.getElementById('registrationDate');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const successMsg = document.getElementById('successMsg');
+    const errorMsg = document.getElementById('errorMsg');
+    const backHomeBtn = document.getElementById('backHomeBtn');
+
+    let currentUser = null;
+    let currentAvatarFile = null; // Для превью и загрузки
+
+    // Обработка выбора файла аватарки
+    avatarInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        currentAvatarFile = file;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          avatarImg.src = event.target.result; // Показать превью
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Кнопка назад на главную
+    backHomeBtn.addEventListener('click', () => {
+      window.location.href = 'index.html'; // сюда нужно поставить путь на главную
+    });
+
+    // Загрузка данных пользователя
+    function loadUserProfile(uid) {
+      db.collection('users').doc(uid).get()
+        .then(doc => {
+          if (!doc.exists) {
+            errorMsg.style.display = 'block';
+            errorMsg.textContent = 'User not found.';
+            return;
+          }
+          const data = doc.data();
+
+          avatarImg.src = data.avatarURL || 'https://via.placeholder.com/150?text=No+Avatar';
+          displayNameInput.value = data.displayName || '';
+          colorSelect.value = data.color || '#FFFFFF';
+          descriptionInput.value = data.description || '';
+
+          if (data.createdAt && data.createdAt.toDate) {
+            registrationDateDiv.textContent = 'Registration Date: ' + data.createdAt.toDate().toLocaleDateString();
+          } else {
+            registrationDateDiv.textContent = 'Registration Date: --';
+          }
+
+          loadUserPastes(uid);
+        })
+        .catch(err => {
+          console.error(err);
+          errorMsg.style.display = 'block';
+          errorMsg.textContent = 'Error loading profile.';
+        });
+    }
+
+    // Загрузка паст из Firestore (пример)
+    function loadUserPastes(uid) {
+      const pastesList = document.getElementById('userPastesList');
+      pastesList.innerHTML = 'Loading pastes...';
+
+      db.collection('pastes')
+        .where('ownerId', '==', uid)
+        .orderBy('createdAt', 'desc')
+        .limit(10)
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            pastesList.textContent = 'No pastes found.';
+            return;
+          }
+          pastesList.innerHTML = '';
+          snapshot.forEach(doc => {
+            const paste = doc.data();
+            const div = document.createElement('div');
+            div.textContent = paste.title || '(Untitled)';
+            div.style.cursor = 'pointer';
+            div.onclick = () => {
+              window.location.href = `paste.html?id=${doc.id}`;
+            };
+            pastesList.appendChild(div);
+          });
+        })
+        .catch(err => {
+          pastesList.textContent = 'Error loading pastes.';
+          console.error(err);
+        });
+    }
+
+    // Сохраняем профиль
+    saveBtn.addEventListener('click', async () => {
+      if (!currentUser) return;
+      saveBtn.disabled = true;
+      successMsg.style.display = 'none';
+      errorMsg.style.display = 'none';
+
+      try {
+        let avatarURL = avatarImg.src;
+
+        // Если выбрали новый аватар — загружаем
+        if (currentAvatarFile) {
+          const storageRef = storage.ref();
+          const avatarRef = storageRef.child(`avatars/${currentUser.uid}_${Date.now()}.${currentAvatarFile.name.split('.').pop()}`);
+          const snapshot = await avatarRef.put(currentAvatarFile);
+          avatarURL = await snapshot.ref.getDownloadURL();
+        }
+
+        // Обновляем данные в Firestore
+        await db.collection('users').doc(currentUser.uid).set({
+          displayName: displayNameInput.value.trim(),
+          color: colorSelect.value,
+          description: descriptionInput.value.trim(),
+          avatarURL: avatarURL,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        successMsg.style.display = 'block';
+        currentAvatarFile = null;
+      } catch (err) {
+        console.error(err);
+        errorMsg.style.display = 'block';
+        errorMsg.textContent = 'Error saving profile.';
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+
+    // Ждем авторизации пользователя и загружаем профиль
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user;
+        loadUserProfile(user.uid);
+      } else {
+        // Если не залогинен — кидаем на главную (или страницу логина)
+        window.location.href = 'index.html';
+      }
+    });
+  </script>
+</body>
+</html>
