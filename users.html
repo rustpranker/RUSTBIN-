@@ -13,17 +13,35 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    body {
-      background-color: #000;
-      color: white;
+    /* Фон с падающими точками */
+    body, html {
+      margin: 0; padding: 0; height: 100%;
+      background: #000;
+      overflow-x: hidden;
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
+      color: white;
+      position: relative;
+    }
+    canvas#backgroundCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    /* Основной контент */
+    .main-content {
+      position: relative;
+      z-index: 1;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
     }
+
     h1 {
       font-size: 40px;
       font-weight: bold;
@@ -33,12 +51,14 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: gradientMove 4s ease infinite;
+      user-select: none;
     }
     @keyframes gradientMove {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+
     #users-list {
       width: 100%;
       max-width: 700px;
@@ -47,16 +67,30 @@
       padding: 20px;
       box-shadow: 0 0 20px #8e44ad;
       box-sizing: border-box;
+      font-family: monospace;
+      font-weight: bold;
     }
+
     .user-item {
       display: flex;
       justify-content: space-between;
       padding: 12px 15px;
       border-bottom: 1px solid #333;
-      font-weight: bold;
-      font-family: monospace;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .user-item:hover {
+      background-color: #4a148c;
     }
     .user-item:last-child { border-bottom: none; }
+
+    .user-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70%;
+    }
+
     .user-role {
       text-transform: uppercase;
       padding: 2px 8px;
@@ -65,12 +99,14 @@
       font-weight: bold;
       min-width: 90px;
       text-align: center;
+      user-select: none;
     }
     .role-admin { background-color: #9b59b6; color: #fff; }
     .role-coowner { background-color: #8e44ad; color: #fff; }
     .role-coder { background-color: #6a1b9a; color: #fff; }
     .role-rich { background-color: #4a148c; color: #fff; }
     .role-user { background-color: #222; color: #bbb; font-weight: normal; }
+
     #pagination {
       margin-top: 20px;
       text-align: center;
@@ -99,11 +135,81 @@
   </style>
 </head>
 <body>
-  <h1>Users</h1>
-  <div id="users-list">Loading users...</div>
-  <div id="pagination"></div>
+  <canvas id="backgroundCanvas"></canvas>
+
+  <div class="main-content">
+    <h1>Users</h1>
+    <div id="users-list">Loading users...</div>
+    <div id="pagination"></div>
+  </div>
 
   <script>
+    // === Фон с падающими точками ===
+    (() => {
+      const canvas = document.getElementById('backgroundCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      const dotsCount = 100;
+      const dots = [];
+
+      function random(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      class Dot {
+        constructor() {
+          this.x = random(0, width);
+          this.y = random(0, height);
+          this.radius = random(1, 3);
+          this.speedY = random(0.5, 1.5);
+          this.alpha = random(0.1, 0.8);
+        }
+        update() {
+          this.y += this.speedY;
+          if (this.y > height) {
+            this.x = random(0, width);
+            this.y = -this.radius;
+            this.radius = random(1, 3);
+            this.speedY = random(0.5, 1.5);
+            this.alpha = random(0.1, 0.8);
+          }
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(142, 68, 173, ${this.alpha})`;
+          ctx.shadowColor = 'rgba(142, 68, 173, 0.7)';
+          ctx.shadowBlur = 8;
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      for(let i = 0; i < dotsCount; i++) {
+        dots.push(new Dot());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        dots.forEach(dot => {
+          dot.update();
+          dot.draw();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
+
+    // === Firebase ===
     const db = firebase.firestore();
     const usersList = document.getElementById('users-list');
     const pagination = document.getElementById('pagination');
@@ -129,7 +235,7 @@
             const data = doc.data();
             allUsers.push({
               uid: doc.id,
-              name: data.username || data.displayName || 'Unknown',
+              name: data.displayName || data.username || 'Unknown',
               role: data.role || 'user',
               createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
             });
@@ -160,6 +266,10 @@
           <div class="user-name">${user.name}</div>
           <div class="user-role ${roleClass}">${user.role}</div>
         `;
+        // По клику переход на профиль
+        div.onclick = () => {
+          window.location.href = `profile.html?uid=${user.uid}`;
+        };
         usersList.appendChild(div);
       });
     }
