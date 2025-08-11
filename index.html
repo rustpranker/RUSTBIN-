@@ -40,36 +40,35 @@
       }
     }
 
+    /* Главное меню с фиолетово-розовой палитрой */
     .navbar {
-      background-color: #1a0033;
+      background-color: #2a003f; /* темно-фиолетовый */
       padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .navbar a {
-      color: #d29cff;
+      color: #d1b3ff; /* светло-фиолетовый */
       text-decoration: none;
       margin: 0 12px;
       font-weight: bold;
       font-size: 16px;
       padding: 8px 16px;
       border-radius: 6px;
-      transition: background 0.2s;
+      transition: background 0.2s, color 0.2s;
+      background-color: transparent;
     }
     .navbar a:hover {
-      background-color: #3a005f;
+      background-color: #7e57c2; /* более насыщенный фиолетовый */
+      color: white;
     }
 
-    .title-container {
-      text-align: center;
-      margin-top: 40px;
-      position: relative;
-    }
+    /* Переливающийся градиент для заголовка RUSTBIN (фиолетовый → белый) */
     .gradient-text {
       font-size: 48px;
       font-weight: bold;
-      background: linear-gradient(270deg, #8e44ad, #ffffff);
+      background: linear-gradient(270deg, #7e57c2, #ffffff, #7e57c2);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -80,14 +79,15 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+
     .credit-text {
       font-size: 14px;
-      color: #9b59b6;
+      color: darkviolet;
       margin-top: 8px;
     }
     .official-text {
       font-size: 14px;
-      color: #8e44ad;
+      color: violet;
       margin-top: 4px;
     }
 
@@ -100,12 +100,10 @@
       border-radius: 6px;
       border: none;
       outline: none;
-      background-color: #2c2c3a;
-      color: white;
     }
     .search-bar button {
       padding: 10px 16px;
-      background-color: #8e44ad;
+      background-color: #7e57c2; /* фиолетовый */
       color: white;
       border: none;
       border-radius: 6px;
@@ -113,12 +111,10 @@
       margin-left: 6px;
       font-weight: bold;
       font-size: 14px;
-      box-shadow: 0 0 10px #8e44ad;
-      transition: background-color 0.3s, box-shadow 0.3s;
+      transition: background-color 0.3s ease;
     }
     .search-bar button:hover {
-      background-color: #732d91;
-      box-shadow: 0 0 15px #732d91;
+      background-color: #5e35b1; /* темнее фиолетового при наведении */
     }
 
     #counter {
@@ -132,11 +128,11 @@
       max-width: 700px;
     }
     .paste-preview {
-      background-color: #1a0033;
+      background-color: #111;
       padding: 12px 16px;
       margin: 10px 0;
-      border: 1px solid #3a005f;
-      border-left: 5px solid #8e44ad;
+      border: 1px solid #333;
+      border-left: 5px solid #7e57c2; /* замена красной линии на фиолетовую */
       cursor: pointer;
       border-radius: 6px;
       font-weight: bold;
@@ -144,14 +140,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: background-color 0.3s;
+      transition: background-color 0.3s ease;
     }
     .paste-preview:hover {
-      background-color: #3a005f;
+      background-color: #2a003f; /* подсветка фоном фиолетовым */
     }
     .paste-meta {
       font-size: 12px;
-      color: #d29cff;
+      color: #bbb;
       margin-top: 4px;
     }
     .pagination {
@@ -159,33 +155,27 @@
       margin: 20px 0;
     }
     .pagination button {
-      background-color: #2c2c3a;
-      color: #d29cff;
+      background-color: #4a148c; /* насыщенный фиолетовый */
+      color: white;
       border: none;
       padding: 8px 12px;
       margin: 0 3px;
       border-radius: 4px;
       cursor: pointer;
-      box-shadow: 0 0 8px #8e44ad;
-      transition: background-color 0.3s, box-shadow 0.3s;
-      font-family: monospace;
+      transition: background-color 0.3s ease;
     }
     .pagination button.active {
-      background-color: #8e44ad;
-      color: white;
-      box-shadow: 0 0 15px #8e44ad;
+      background-color: #7e57c2;
     }
-    .pagination button:hover:not(.active) {
-      background-color: #732d91;
-      box-shadow: 0 0 15px #732d91;
-      color: white;
+    .pagination button:hover {
+      background-color: #5e35b1;
     }
 
     /* Роли */
-    .role-admin { color: #ff4d4d; }
-    .role-coowner { color: #d29cff; }
-    .role-coder { color: #2ecc71; }
-    .role-rich { color: #f1c40f; }
+    .role-admin { color: red; }
+    .role-coowner { color: purple; }
+    .role-coder { color: darkgreen; }
+    .role-rich { color: yellow; }
 
     /* Переливающаяся надпись сбоку */
     .side-text {
@@ -195,12 +185,28 @@
       transform: rotate(-90deg) translateY(-50%);
       font-size: 32px;
       font-weight: bold;
-      background: linear-gradient(270deg, #8e44ad, #ffffff);
+      background: linear-gradient(270deg, red, white, red);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: gradientMove 4s ease infinite;
       pointer-events: none;
+    }
+
+    /* Кнопка Get Role */
+    #getRoleBtn {
+      background-color: #7e57c2;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+      margin-left: 6px;
+      transition: background-color 0.3s ease;
+    }
+    #getRoleBtn:hover {
+      background-color: #5e35b1;
     }
   </style>
 </head>
@@ -214,6 +220,7 @@
       <a href="index.html">Home</a>
       <a href="create.html">Add Paste</a>
       <a href="users.html">Users</a>
+      <a href="profile.html">My Profile</a>
     </div>
     <div class="nav-right" id="auth-buttons">
       <a href="register.html">Register</a>
@@ -232,11 +239,11 @@
       <button onclick="searchPastes()">Search</button>
     </div>
 
-    <div id="counter">Loaded 0 of 0</div>
+    <div id="counter">Загружено 0 из 0</div>
 
     <div style="margin-top: 15px;">
       <input type="text" id="roleInput" placeholder="Enter your UID to get role" style="padding:8px; border-radius:4px; border:none; width: 220px;"/>
-      <button id="getRoleBtn" style="background-color: #8e44ad; color: white; font-weight: bold; border:none; border-radius: 4px; padding: 8px 16px; cursor: pointer; margin-left: 6px;">Get Role</button>
+      <button id="getRoleBtn">Get Role</button>
       <div id="roleStatus"></div>
     </div>
   </div>
@@ -289,13 +296,13 @@
       const roleClass = role && rolesColorClass[role] ? rolesColorClass[role] : '';
       authButtonsDiv.innerHTML = `
         <span class="${roleClass}">${user.displayName || user.email}</span>
-        <button id="logoutBtn" style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
+        <button id="logoutBtn" style="background:none; border:none; color:#d1b3ff; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
       `;
       document.getElementById('logoutBtn').onclick = () => firebase.auth().signOut();
     } catch {
       authButtonsDiv.innerHTML = `
         <span>${user.displayName || user.email}</span>
-        <button id="logoutBtn" style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
+        <button id="logoutBtn" style="background:none; border:none; color:#d1b3ff; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
       `;
       document.getElementById('logoutBtn').onclick = () => firebase.auth().signOut();
     }
@@ -311,10 +318,11 @@
             id: doc.id,
             title: paste.title || 'Untitled',
             content: paste.content || '',
-            createdAt: paste.createdAt ? paste.createdAt.toDate() : new Date()
+            createdAt: paste.createdAt ? paste.createdAt.toDate() : new Date(),
+            views: paste.views || 0
           });
         });
-        counterDiv.textContent = `Loaded ${allPastes.length} of ${allPastes.length}`;
+        counterDiv.textContent = `Загружено ${allPastes.length} из ${allPastes.length}`;
         displayPastes(allPastes);
       });
   }
@@ -331,12 +339,10 @@
       div.innerHTML = `
         <div>
           ${paste.title}
-          <div class="paste-meta">${paste.createdAt.toLocaleDateString()}</div>
+          <div class="paste-meta">${paste.views} views • ${paste.createdAt.toLocaleDateString()}</div>
         </div>
       `;
-      div.onclick = () => {
-        window.location.href = `paste.html?id=${paste.id}`;
-      };
+      div.onclick = () => window.location.href = `paste.html?id=${paste.id}`;
       pastesList.appendChild(div);
     });
 
@@ -361,7 +367,7 @@
   function searchPastes() {
     const query = searchInput.value.trim().toLowerCase();
     const filtered = !query ? allPastes : allPastes.filter(p => p.title.toLowerCase().includes(query));
-    counterDiv.textContent = `Loaded ${filtered.length} of ${allPastes.length}`;
+    counterDiv.textContent = `Загружено ${filtered.length} из ${allPastes.length}`;
     currentPage = 1;
     displayPastes(filtered);
   }
@@ -370,7 +376,7 @@
     const enteredUID = roleInput.value.trim();
     if (!enteredUID) {
       roleStatus.textContent = 'Введите UID';
-      roleStatus.className = 'error';
+      roleStatus.className = 'incorrect';
       return;
     }
     const role = rolesMap[enteredUID];
