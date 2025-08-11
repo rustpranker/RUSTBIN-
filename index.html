@@ -19,34 +19,56 @@
       background-color: #000;
       color: white;
       font-family: Arial, sans-serif;
-      margin: 0; padding: 0;
+      margin: 0;
+      padding: 0;
+      position: relative;
+      overflow-x: hidden;
     }
 
+    /* Снежинки */
+    .snowflake {
+      position: fixed;
+      top: -10px;
+      color: white;
+      font-size: 1em;
+      pointer-events: none;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      to {
+        transform: translateY(100vh);
+      }
+    }
+
+    /* Главное меню с фиолетово-розовой палитрой */
     .navbar {
-      background-color: #111;
-      padding: 10px 20px;
+      background-color: #2a003f; /* темно-фиолетовый */
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .navbar a {
-      color: white;
+      color: #d1b3ff; /* светло-фиолетовый */
       text-decoration: none;
-      margin: 0 10px;
+      margin: 0 12px;
       font-weight: bold;
+      font-size: 16px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      transition: background 0.2s, color 0.2s;
+      background-color: transparent;
     }
     .navbar a:hover {
-      color: red;
+      background-color: #7e57c2; /* более насыщенный фиолетовый */
+      color: white;
     }
 
-    .title-container {
-      text-align: center;
-      margin-top: 50px;
-    }
+    /* Переливающийся градиент для заголовка RUSTBIN (фиолетовый → белый) */
     .gradient-text {
       font-size: 48px;
       font-weight: bold;
-      background: linear-gradient(270deg, red, white, red);
+      background: linear-gradient(270deg, #7e57c2, #ffffff, #7e57c2);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -57,73 +79,141 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+
     .credit-text {
       font-size: 14px;
-      color: red;
-      margin-top: 10px;
+      color: darkviolet;
+      margin-top: 8px;
     }
+    .official-text {
+      font-size: 14px;
+      color: violet;
+      margin-top: 4px;
+    }
+
     .search-bar {
       margin-top: 20px;
     }
     .search-bar input {
-      padding: 8px;
-      width: 200px;
-      border-radius: 4px;
+      padding: 10px;
+      width: 220px;
+      border-radius: 6px;
       border: none;
       outline: none;
     }
     .search-bar button {
-      padding: 8px 12px;
-      background-color: red;
+      padding: 10px 16px;
+      background-color: #7e57c2; /* фиолетовый */
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       margin-left: 6px;
       font-weight: bold;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
     }
     .search-bar button:hover {
-      background-color: #c00;
+      background-color: #5e35b1; /* темнее фиолетового при наведении */
     }
+
+    #counter {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #ccc;
+    }
+
     .pastes-list {
-      margin: 40px auto;
-      max-width: 600px;
+      margin: 30px auto;
+      max-width: 700px;
     }
     .paste-preview {
       background-color: #111;
-      padding: 10px 15px;
+      padding: 12px 16px;
       margin: 10px 0;
       border: 1px solid #333;
-      border-left: 5px solid red;
+      border-left: 5px solid #7e57c2; /* замена красной линии на фиолетовую */
       cursor: pointer;
-      transition: background 0.2s;
-      border-radius: 4px;
+      border-radius: 6px;
       font-weight: bold;
       user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background-color 0.3s ease;
     }
     .paste-preview:hover {
-      background-color: #1a1a1a;
+      background-color: #2a003f; /* подсветка фоном фиолетовым */
     }
-    /* Роли - цвет ника */
+    .paste-meta {
+      font-size: 12px;
+      color: #bbb;
+      margin-top: 4px;
+    }
+    .pagination {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .pagination button {
+      background-color: #4a148c; /* насыщенный фиолетовый */
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin: 0 3px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .pagination button.active {
+      background-color: #7e57c2;
+    }
+    .pagination button:hover {
+      background-color: #5e35b1;
+    }
+
+    /* Роли */
     .role-admin { color: red; }
     .role-coowner { color: purple; }
     .role-coder { color: darkgreen; }
     .role-rich { color: yellow; }
 
-    /* Сообщения успеха и ошибки */
-    #roleStatus {
-      margin-top: 8px;
+    /* Переливающаяся надпись сбоку */
+    .side-text {
+      position: fixed;
+      right: -40px;
+      top: 50%;
+      transform: rotate(-90deg) translateY(-50%);
+      font-size: 32px;
       font-weight: bold;
+      background: linear-gradient(270deg, red, white, red);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 4s ease infinite;
+      pointer-events: none;
     }
-    #roleStatus.success {
-      color: #4CAF50; /* зелёный */
+
+    /* Кнопка Get Role */
+    #getRoleBtn {
+      background-color: #7e57c2;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+      margin-left: 6px;
+      transition: background-color 0.3s ease;
     }
-    #roleStatus.error {
-      color: red;
+    #getRoleBtn:hover {
+      background-color: #5e35b1;
     }
   </style>
 </head>
 <body>
+
+  <!-- Снежинки -->
+  <div id="snow"></div>
 
   <nav class="navbar">
     <div class="nav-left">
@@ -139,212 +229,196 @@
 
   <div class="title-container">
     <h1 class="gradient-text">RUSTBIN</h1>
-    <img src="https://i.postimg.cc/KYjGFZCX/photo-2025-07-12-18-26-05.jpg" alt="logo" style="max-width: 150px; margin: 20px auto;" />
-    <p class="credit-text">
-      created by kostya rjaviy, destroymymemories<br />
-      contact dc: wg2d, destroymymemories
-    </p>
+    <img src="https://media.tenor.com/rkAEqes681cAAAAi/purple-heart-purple.gif" alt="logo" style="max-width: 150px; margin: 20px auto;" />
+    <p class="credit-text">created by kostya rjaviy, destroymymemories<br>contact dc: wg2d, destroymymemories</p>
+    <p class="official-text">official site by kostya rjaviy</p>
 
     <div class="search-bar">
       <input type="text" id="searchInput" placeholder="Search pastes by title..." />
       <button onclick="searchPastes()">Search</button>
     </div>
 
-    <!-- Блок для Get Role и ввода UID -->
+    <div id="counter">Загружено 0 из 0</div>
+
     <div style="margin-top: 15px;">
-      <input type="text" id="roleInput" placeholder="Enter your UID to get role" style="padding:8px; border-radius:4px; border:none; width: 220px; max-width: 100%;"/>
-      <button id="getRoleBtn" style="background-color: red; color: white; font-weight: bold; border:none; border-radius: 4px; padding: 8px 16px; cursor: pointer; margin-left: 6px;">Get Role</button>
+      <input type="text" id="roleInput" placeholder="Enter your UID to get role" style="padding:8px; border-radius:4px; border:none; width: 220px;"/>
+      <button id="getRoleBtn">Get Role</button>
       <div id="roleStatus"></div>
     </div>
   </div>
 
   <div id="pastes-list" class="pastes-list"></div>
 
-  <script>
-    const authButtonsDiv = document.getElementById('auth-buttons');
-    const pastesList = document.getElementById('pastes-list');
-    const searchInput = document.getElementById('searchInput');
-    const getRoleBtn = document.getElementById('getRoleBtn');
-    const roleInput = document.getElementById('roleInput');
-    const roleStatus = document.getElementById('roleStatus');
+  <div class="pagination" id="pagination"></div>
 
-    let allPastes = [];
+<script>
+  const authButtonsDiv = document.getElementById('auth-buttons');
+  const pastesList = document.getElementById('pastes-list');
+  const searchInput = document.getElementById('searchInput');
+  const getRoleBtn = document.getElementById('getRoleBtn');
+  const roleInput = document.getElementById('roleInput');
+  const roleStatus = document.getElementById('roleStatus');
+  const counterDiv = document.getElementById('counter');
+  const paginationDiv = document.getElementById('pagination');
 
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+  let allPastes = [];
+  let currentPage = 1;
+  const itemsPerPage = 20;
 
-    // Предопределённые UID и роли для проверки
-    const rolesMap = {
-      "ZJl09Nb8cx": "admin",
-      "N8Jxcl0z6d": "coowner",
-      "Zn9Jx7Lmn1": "coder",
-      "Sj9xn23Bcv": "rich"
-    };
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-    const rolesColorClass = {
-      "admin": "role-admin",
-      "coowner": "role-coowner",
-      "coder": "role-coder",
-      "rich": "role-rich"
-    };
+  const rolesMap = {
+    "ZJl09Nb8cx": "admin",
+    "N8Jxcl0z6d": "coowner",
+    "Zn9Jx7Lmn1": "coder",
+    "Sj9xn23Bcv": "rich"
+  };
+  const rolesColorClass = {
+    "admin": "role-admin",
+    "coowner": "role-coowner",
+    "coder": "role-coder",
+    "rich": "role-rich"
+  };
 
-    // Обновить UI авторизации с цветом ника (из Firestore)
-    async function updateAuthUI(user) {
-      if (!user) {
-        authButtonsDiv.innerHTML = `
-          <a href="register.html">Register</a>
-          <a href="login.html">Login</a>
-        `;
-        return;
-      }
-
-      try {
-        const userDoc = await db.collection('users').doc(user.uid).get();
-        let role = null;
-        if (userDoc.exists && userDoc.data().role) {
-          role = userDoc.data().role;
-        } else if (rolesMap[user.uid]) {
-          role = rolesMap[user.uid];
-        }
-
-        const roleClass = role && rolesColorClass[role] ? rolesColorClass[role] : '';
-
-        authButtonsDiv.innerHTML = `
-          <span class="${roleClass}">${user.displayName || user.email}</span>
-          <button id="logoutBtn" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
-        `;
-
-        document.getElementById('logoutBtn').onclick = () => {
-          firebase.auth().signOut();
-        };
-      } catch (error) {
-        console.error('Error getting role from Firestore:', error);
-        // fallback без роли
-        authButtonsDiv.innerHTML = `
-          <span>${user.displayName || user.email}</span>
-          <button id="logoutBtn" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
-        `;
-        document.getElementById('logoutBtn').onclick = () => {
-          firebase.auth().signOut();
-        };
-      }
+  async function updateAuthUI(user) {
+    if (!user) {
+      authButtonsDiv.innerHTML = `
+        <a href="register.html">Register</a>
+        <a href="login.html">Login</a>
+      `;
+      return;
     }
+    try {
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      let role = userDoc.exists ? userDoc.data().role : rolesMap[user.uid];
+      const roleClass = role && rolesColorClass[role] ? rolesColorClass[role] : '';
+      authButtonsDiv.innerHTML = `
+        <span class="${roleClass}">${user.displayName || user.email}</span>
+        <button id="logoutBtn" style="background:none; border:none; color:#d1b3ff; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
+      `;
+      document.getElementById('logoutBtn').onclick = () => firebase.auth().signOut();
+    } catch {
+      authButtonsDiv.innerHTML = `
+        <span>${user.displayName || user.email}</span>
+        <button id="logoutBtn" style="background:none; border:none; color:#d1b3ff; cursor:pointer; font-weight:bold; margin-left:10px;">Logout</button>
+      `;
+      document.getElementById('logoutBtn').onclick = () => firebase.auth().signOut();
+    }
+  }
 
-    // Получить и отобразить пасты
-    function loadPastes() {
-      db.collection('pastes').orderBy('createdAt', 'desc').get()
-        .then(snapshot => {
-          allPastes = [];
-          snapshot.forEach(doc => {
-            const paste = doc.data();
-            allPastes.push({
-              id: doc.id,
-              title: paste.title || 'Untitled',
-              content: paste.content || '',
-              createdAt: paste.createdAt ? paste.createdAt.toMillis() : 0
-            });
+  function loadPastes() {
+    db.collection('pastes').orderBy('createdAt', 'desc').get()
+      .then(snapshot => {
+        allPastes = [];
+        snapshot.forEach(doc => {
+          const paste = doc.data();
+          allPastes.push({
+            id: doc.id,
+            title: paste.title || 'Untitled',
+            content: paste.content || '',
+            createdAt: paste.createdAt ? paste.createdAt.toDate() : new Date(),
+            views: paste.views || 0
           });
-          displayPastes(allPastes);
-        })
-        .catch(err => {
-          pastesList.innerHTML = 'Ошибка загрузки паст: ' + err.message;
-          console.error(err);
         });
-    }
-
-    // Отобразить пасты
-    function displayPastes(pastes) {
-      pastesList.innerHTML = '';
-      if (pastes.length === 0) {
-        pastesList.textContent = 'Пасты не найдены.';
-        return;
-      }
-      pastes.forEach(paste => {
-        const div = document.createElement('div');
-        div.className = 'paste-preview';
-        div.textContent = paste.title;
-        div.onclick = () => {
-          window.location.href = `paste.html?id=${paste.id}`;
-        };
-        pastesList.appendChild(div);
-      });
-    }
-
-    // Поиск паст
-    function searchPastes() {
-      const query = searchInput.value.trim().toLowerCase();
-      if (!query) {
+        counterDiv.textContent = `Загружено ${allPastes.length} из ${allPastes.length}`;
         displayPastes(allPastes);
-        return;
-      }
-      const filtered = allPastes.filter(p => p.title.toLowerCase().includes(query));
-      displayPastes(filtered);
-    }
+      });
+  }
 
-    // Обработчик нажатия на Get Role
-    getRoleBtn.onclick = async () => {
-      const enteredUID = roleInput.value.trim();
-      if (!enteredUID) {
-        roleStatus.textContent = 'Введите UID';
-        roleStatus.className = 'error';
-        return;
-      }
-      const role = rolesMap[enteredUID];
-      if (!role) {
-        roleStatus.textContent = 'Incorrect!';
-        roleStatus.className = 'error';
-        return;
-      }
+  function displayPastes(list) {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const paginatedItems = list.slice(start, end);
 
-      const user = auth.currentUser;
-      if (!user) {
-        roleStatus.textContent = 'Вы должны войти в аккаунт';
-        roleStatus.className = 'error';
-        return;
-      }
-
-      if (user.uid !== enteredUID) {
-        roleStatus.textContent = 'Введённый UID не совпадает с вашим аккаунтом';
-        roleStatus.className = 'error';
-        return;
-      }
-
-      try {
-        const userRef = db.collection('users').doc(user.uid);
-        const userDoc = await userRef.get();
-
-        if (userDoc.exists && userDoc.data().role === role) {
-          roleStatus.textContent = `You already have the role "${role}"`;
-          roleStatus.className = 'error';
-          return;
-        }
-
-        // Обновляем роль в Firestore
-        await userRef.set({ role }, { merge: true });
-
-        // Обновляем UI с новым цветом ника
-        updateAuthUI(user);
-
-        roleStatus.textContent = `Successful! You got the role "${role}"`;
-        roleStatus.className = 'success';
-        roleInput.value = '';
-
-      } catch (error) {
-        console.error('Error setting role:', error);
-        roleStatus.textContent = 'Ошибка при получении роли';
-        roleStatus.className = 'error';
-      }
-    };
-
-    // Обработка авторизации
-    firebase.auth().onAuthStateChanged(user => {
-      updateAuthUI(user);
-      roleStatus.textContent = '';
-      roleStatus.className = '';
-      roleInput.value = '';
-      loadPastes();
+    pastesList.innerHTML = '';
+    paginatedItems.forEach(paste => {
+      const div = document.createElement('div');
+      div.className = 'paste-preview';
+      div.innerHTML = `
+        <div>
+          ${paste.title}
+          <div class="paste-meta">${paste.views} views • ${paste.createdAt.toLocaleDateString()}</div>
+        </div>
+      `;
+      div.onclick = () => window.location.href = `paste.html?id=${paste.id}`;
+      pastesList.appendChild(div);
     });
 
-    window.onload = loadPastes;
-  </script>
+    renderPagination(list.length);
+  }
+
+  function renderPagination(totalItems) {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    paginationDiv.innerHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i;
+      if (i === currentPage) btn.classList.add('active');
+      btn.onclick = () => {
+        currentPage = i;
+        displayPastes(allPastes);
+      };
+      paginationDiv.appendChild(btn);
+    }
+  }
+
+  function searchPastes() {
+    const query = searchInput.value.trim().toLowerCase();
+    const filtered = !query ? allPastes : allPastes.filter(p => p.title.toLowerCase().includes(query));
+    counterDiv.textContent = `Загружено ${filtered.length} из ${allPastes.length}`;
+    currentPage = 1;
+    displayPastes(filtered);
+  }
+
+  getRoleBtn.onclick = async () => {
+    const enteredUID = roleInput.value.trim();
+    if (!enteredUID) {
+      roleStatus.textContent = 'Введите UID';
+      roleStatus.className = 'error';
+      return;
+    }
+    const role = rolesMap[enteredUID];
+    if (!role) {
+      roleStatus.textContent = 'Incorrect!';
+      roleStatus.className = 'error';
+      return;
+    }
+    const user = auth.currentUser;
+    if (!user) {
+      roleStatus.textContent = 'Вы должны войти в аккаунт';
+      roleStatus.className = 'error';
+      return;
+    }
+    if (user.uid !== enteredUID) {
+      roleStatus.textContent = 'UID не совпадает с вашим';
+      roleStatus.className = 'error';
+      return;
+    }
+    await db.collection('users').doc(user.uid).set({ role }, { merge: true });
+    updateAuthUI(user);
+    roleStatus.textContent = `Successful! You got the role "${role}"`;
+    roleStatus.className = 'success';
+    roleInput.value = '';
+  };
+
+  firebase.auth().onAuthStateChanged(user => {
+    updateAuthUI(user);
+    loadPastes();
+  });
+
+  // Снежинки
+  function createSnowflake() {
+    const snowflake = document.createElement('div');
+    snowflake.classList.add('snowflake');
+    snowflake.textContent = '.';
+    snowflake.style.left = Math.random() * window.innerWidth + 'px';
+    snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+    snowflake.style.animationDuration = (Math.random() * 5 + 5) + 's';
+    document.getElementById('snow').appendChild(snowflake);
+    setTimeout(() => snowflake.remove(), 10000);
+  }
+  setInterval(createSnowflake, 200);
+</script>
 </body>
+</html>
