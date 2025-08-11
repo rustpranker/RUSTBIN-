@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>User Profile - Rustbin</title>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+  body { background:#000; color:white; font-family:Arial; padding:20px; }
+  .profile-card { background:#111; padding:20px; border-radius:8px; max-width:600px; margin:auto; box-shadow:0 0 10px purple; }
+  .avatar { width:120px; height:120px; border-radius:50%; object-fit:cover; }
+  .username { font-size:24px; font-weight:bold; }
+  .desc { margin-top:10px; font-style:italic; color:#ccc; }
+  .pastes-list { margin-top:20px; }
+  .paste { background:#222; padding:10px; margin:5px 0; border-radius:6px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="profile-card" id="profileCard">Loading...</div>
+<div class="pastes-list" id="pastesList"></div>
+
+<script>
+const db = firebase.firestore();
+const params = new URLSearchParams(location.search);
+const uid = params.get('uid');
+
+async function loadProfile() {
+  const docSnap = await db.collection('users').doc(uid).get();
+  if(!docSnap.exists) {
+    document.getElementById('profileCard').textContent = 'User not found';
+    return;
+  }
+  const data = docSnap.data();
+  document.getElementById('profileCard').innerHTML = `
+    <img src="${data.avatarUrl || 'default-avatar.png'}" class="avatar" />
+    <div class="username" style="color:${data.nickColor || 'white'}">${data.username || 'Unknown'}</div>
+    <div>Role: ${data.role || 'user'}</div>
+    <div>Joined: ${data.createdAt?.toDate().toLocaleDateString() || 'N/A'}</div>
+    <div class="desc">${data.description || 'No description'}</div>
+  `;
+
+  // load user's pastes
+  const pastesSnap = await db.collection('pastes').where('uid','==',uid).orderBy('createdAt','desc').get();
+  const list = document.getElementById('pastesList');
+  list.innerHTML = '<h3>User Pastes:</h3>';
+  pastesSnap.forEach(doc => {
+    const p = doc.data();
+    const div = document.createElement('div');
+    div.className = 'paste';
+    div.textContent = p.title || 'Untitled';
+    div.onclick = () => location.href = `paste.html?id=${doc.id}`;
+    list.appendChild(div);
+  });
+}
+loadProfile();
+</script>
+</body>
+</html>
