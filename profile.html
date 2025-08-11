@@ -1,61 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>User Profile - Rustbin</title>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<style>
-  body { background:#000; color:white; font-family:Arial; padding:20px; }
-  .profile-card { background:#111; padding:20px; border-radius:8px; max-width:600px; margin:auto; box-shadow:0 0 10px purple; }
-  .avatar { width:120px; height:120px; border-radius:50%; object-fit:cover; }
-  .username { font-size:24px; font-weight:bold; }
-  .desc { margin-top:10px; font-style:italic; color:#ccc; }
-  .pastes-list { margin-top:20px; }
-  .paste { background:#222; padding:10px; margin:5px 0; border-radius:6px; cursor:pointer; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profile - Rustbin</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+
+  <style>
+    /* Фон с падающими точками из твоего index.html */
+    body, html {
+      margin: 0; padding: 0; height: 100%;
+      background: #000;
+      overflow-x: hidden;
+      font-family: Arial, sans-serif;
+      color: white;
+      position: relative;
+    }
+    canvas#backgroundCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    /* Основной контейнер и контент поверх канваса */
+    .main-content {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      font-size: 40px;
+      font-weight: bold;
+      margin-bottom: 25px;
+      background: linear-gradient(270deg, #8e44ad, #ffffff);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 4s ease infinite;
+      user-select: none;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .profile-container {
+      background-color: #111;
+      border-radius: 8px;
+      padding: 20px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 0 20px #8e44ad;
+      box-sizing: border-box;
+    }
+
+    .avatar {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background-color: #222;
+      object-fit: cover;
+      display: block;
+      margin: 0 auto 20px auto;
+      border: 3px solid #8e44ad;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 6px;
+      font-weight: bold;
+    }
+
+    input[type="file"],
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      background-color: #222;
+      color: white;
+      resize: vertical;
+    }
+
+    textarea {
+      min-height: 80px;
+    }
+
+    button {
+      margin-top: 15px;
+      background-color: #8e44ad;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #6a1b9a;
+    }
+
+    .info {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #bbb;
+      text-align: center;
+    }
+
+    .error {
+      color: #ff5555;
+      margin-top: 10px;
+      text-align: center;
+    }
+    .success {
+      color: #55ff55;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    #userPastesList > div {
+      border-bottom: 1px solid #333;
+      padding: 6px 0;
+      cursor: pointer;
+    }
+    #userPastesList > div:hover {
+      color: #8e44ad;
+      text-decoration: underline;
+    }
+
+  </style>
 </head>
 <body>
-<div class="profile-card" id="profileCard">Loading...</div>
-<div class="pastes-list" id="pastesList"></div>
+  <canvas id="backgroundCanvas"></canvas>
 
-<script>
-const db = firebase.firestore();
-const params = new URLSearchParams(location.search);
-const uid = params.get('uid');
+  <div class="main-content">
+    <h1>Profile</h1>
 
-async function loadProfile() {
-  const docSnap = await db.collection('users').doc(uid).get();
-  if(!docSnap.exists) {
-    document.getElementById('profileCard').textContent = 'User not found';
-    return;
-  }
-  const data = docSnap.data();
-  document.getElementById('profileCard').innerHTML = `
-    <img src="${data.avatarUrl || 'default-avatar.png'}" class="avatar" />
-    <div class="username" style="color:${data.nickColor || 'white'}">${data.username || 'Unknown'}</div>
-    <div>Role: ${data.role || 'user'}</div>
-    <div>Joined: ${data.createdAt?.toDate().toLocaleDateString() || 'N/A'}</div>
-    <div class="desc">${data.description || 'No description'}</div>
-  `;
+    <div class="profile-container" id="profile-container">
+      <img src="" alt="Avatar" id="avatar" class="avatar" />
 
-  // load user's pastes
-  const pastesSnap = await db.collection('pastes').where('uid','==',uid).orderBy('createdAt','desc').get();
-  const list = document.getElementById('pastesList');
-  list.innerHTML = '<h3>User Pastes:</h3>';
-  pastesSnap.forEach(doc => {
-    const p = doc.data();
-    const div = document.createElement('div');
-    div.className = 'paste';
-    div.textContent = p.title || 'Untitled';
-    div.onclick = () => location.href = `paste.html?id=${doc.id}`;
-    list.appendChild(div);
-  });
-}
-loadProfile();
-</script>
+      <label for="avatarInput">Change Avatar:</label>
+      <input type="file" id="avatarInput" accept="image/*" />
+
+      <label for="displayNameInput">Display Name / Nickname:</label>
+      <input type="text" id="displayNameInput" maxlength="30" placeholder="Enter your display name" />
+
+      <label for="colorSelect">Nickname Color:</label>
+      <select id="colorSelect">
+        <option value="#FFFFFF">White</option>
+        <option value="#FF0000">Red</option>
+        <option value="#800080">Purple</option>
+        <option value="#008000">Green</option>
+        <option value="#FFFF00">Yellow</option>
+        <option value="#4a148c">Dark Violet</option>
+        <option value="#d1b3ff">Light Purple</option>
+      </select>
+
+      <label for="descriptionInput">Description / About You:</label>
+      <textarea id="descriptionInput" placeholder="Write something about yourself..."></textarea>
+
+      <div class="info" id="registrationDate">Registration Date: --</div>
+
+      <button id="saveProfileBtn">Save Profile</button>
+
+      <div class="success" id="successMsg" style="display:none;">Profile saved successfully!</div>
+      <div class="error" id="errorMsg" style="display:none;"></div>
+
+      <h2 style="margin-top:30px; text-align:center;">Your Pastes</h2>
+      <div id="userPastesList" style="max-height: 250px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <script>
+    // === Падающие точки фон ===
+    (() => {
+      const canvas = document.getElementById('backgroundCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      const dotsCount = 100;
+      const dots = [];
+
+      function random(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      class Dot {
+        constructor() {
+          this.x = random(0, width);
+          this.y = random(0, height);
+          this.radius = random(1, 3);
+          this.speedY = random(0.5, 1.5);
+          this.alpha = random(0.1, 0.8);
+        }
+        update() {
+          this.y += this.speedY;
+          if (this.y > height) {
+            this.x = random(0, width);
+            this.y = -this.radius;
+            this.radius = random(1, 3);
+            this.speedY = random(0.5, 1.5);
+            this.alpha = random(0.1, 0.8);
+          }
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(142, 68, 173, ${this.alpha})`;
+          ctx.shadowColor = 'rgba(142, 68, 173, 0.7)';
+          ctx.shadowBlur = 8;
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      for(let i = 0; i < dotsCount; i++) {
+        dots.push(new Dot());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        dots.forEach(dot => {
+          dot.update();
+          dot.draw();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
+
+    // === Firebase auth + Firestore + Storage ===
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    const avatarImg = document.getElementById('avatar');
+    const avatarInput = document.getElementById('avatarInput');
+    const displayNameInput = document.getElementById('displayNameInput');
+    const descriptionInput = document.getElementById('descriptionInput');
+    const colorSelect = document.getElementById('colorSelect');
+    const registrationDateDiv = document.getElementById('registrationDate');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const successMsg = document.getElementById('successMsg');
+    const errorMsg = document.getElementById('errorMsg');
+    const userPastesList = document.getElementById('userPastesList');
+
+    let currentUserUID = null;
+    let avatarFile = null;
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+      successMsg.style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successMsg.style.display = 'block';
+      errorMsg.style.display = 'none';
+    }
+
+    function clearMessages() {
+      successMsg.style.display = 'none';
+      errorMsg.style.display = 'none';
+    }
+
+    // Загрузка данных пользователя из Firestore
+    function loadUserProfile(uid) {
+      db.collection('users').doc(uid).get()
+        .then(doc => {
+          if (!doc.exists) {
+            displayNameInput.value = '';
+            descriptionInput.value = '';
+            colorSelect.value = '#FFFFFF';
+            registrationDateDiv.textContent = 'Registration Date: Unknown';
+            avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
+            return;
+          }
+          const data = doc.data();
+          displayNameInput.value = data.displayName || '';
+          descriptionInput.value = data.description || '';
+          colorSelect.value = data.nickColor || '#FFFFFF';
+          if(data.createdAt && data.createdAt.toDate) {
+            registrationDateDiv.textContent = 'Registration Date: ' + data.createdAt.toDate().toLocaleDateString();
+          } else {
+            registrationDateDiv.textContent = 'Registration Date: Unknown';
+          }
+          if(data.avatarUrl) {
+            avatarImg.src = data.avatarUrl;
+          } else {
+            avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
+          }
+        })
+        .catch(() => {
+          registrationDateDiv.textContent = 'Registration Date: Unknown';
+          avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
+        });
+
+      loadUserPastes(uid);
+    }
+
+    // Загрузка паст из Firestore для текущего пользователя
+    function loadUserPastes(uid) {
+      userPastesList.innerHTML = 'Loading...';
+      db.collection('pastes').where('ownerUID', '==', uid).orderBy('createdAt', 'desc').get()
+        .then(snapshot => {
+          if(snapshot.empty) {
+            userPastesList.innerHTML = '<p>No pastes found.</p>';
+            return;
+          }
+          userPastesList.innerHTML = '';
+          snapshot.forEach(doc => {
+            const paste = doc.data();
+            const div = document.createElement('div');
+            div.textContent = paste.title || 'Untitled';
+            div.onclick = () => window.location.href = `paste.html?id=${doc.id}`;
+            userPastesList.appendChild(div);
+          });
+        })
+        .catch(() => {
+          userPastesList.innerHTML = '<p>Error loading pastes.</p>';
+        });
+    }
+
+    // Загрузка и получение ссылки на аватар из Firebase Storage
+    function uploadAvatar(uid, file) {
+      const storageRef = storage.ref();
+      const ext = file.name.split('.').pop();
+      const avatarRef = storageRef.child(`avatars/${uid}_${Date.now()}.${ext}`);
+      return avatarRef.put(file).then(snapshot => snapshot.ref.getDownloadURL());
+    }
+
+    saveBtn.onclick = async () => {
+      clearMessages();
+      if (!currentUserUID) {
+        showError('User not logged in');
+        return;
+      }
+
+      const displayName = displayNameInput.value.trim();
+      const description = descriptionInput.value.trim();
+      const nickColor = colorSelect.value;
+
+      if(displayName.length === 0) {
+        showError('Display name cannot be empty');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      try {
+        let avatarUrl;
+
+        if (avatarFile) {
+          avatarUrl = await uploadAvatar(currentUserUID, avatarFile);
+        } else {
+          const userDoc = await db.collection('users').doc(currentUserUID).get();
+          avatarUrl = userDoc.exists ? userDoc.data().avatarUrl : null;
+        }
+
+        await db.collection('users').doc(currentUserUID).set({
+          displayName,
+          description,
+          nickColor,
+          avatarUrl,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          // Если нет createdAt — поставить сейчас
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        showSuccess('Profile saved successfully!');
+        avatarFile = null;
+        loadUserProfile(currentUserUID);
+      } catch (e) {
+        showError('Failed to save profile: ' + e.message);
+      }
+      saveBtn.disabled = false;
+    };
+
+    avatarInput.onchange = (e) => {
+      if(e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        if(!file.type.startsWith('image/')) {
+          showError('File must be an image');
+          return;
+        }
+        avatarFile = file;
+        avatarImg.src = URL.createObjectURL(file);
+        clearMessages();
+      }
+    };
+
+    firebase.auth().onAuthStateChanged(user => {
+      if(user) {
+        currentUserUID = user.uid;
+        loadUserProfile(user.uid);
+      } else {
+        document.getElementById('profile-container').innerHTML = '<p style="text-align:center;">You must be logged in to view this page.</p>';
+      }
+    });
+  </script>
 </body>
 </html>
