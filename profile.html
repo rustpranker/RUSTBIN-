@@ -14,7 +14,7 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    /* Фон с падающими точками из твоего index.html */
+    /* Фон с падающими точками */
     body, html {
       margin: 0; padding: 0; height: 100%;
       background: #000;
@@ -31,7 +31,7 @@
       z-index: 0;
     }
 
-    /* Основной контейнер и контент поверх канваса */
+    /* Основной контейнер */
     .main-content {
       position: relative;
       z-index: 1;
@@ -148,7 +148,6 @@
       color: #8e44ad;
       text-decoration: underline;
     }
-
   </style>
 </head>
 <body>
@@ -158,7 +157,7 @@
     <h1>Profile</h1>
 
     <div class="profile-container" id="profile-container">
-      <img src="" alt="Avatar" id="avatar" class="avatar" />
+      <img src="" alt="Avatar" id="avatar" class="avatar" onerror="this.src='https://via.placeholder.com/150?text=No+Avatar'" />
 
       <label for="avatarInput">Change Avatar:</label>
       <input type="file" id="avatarInput" accept="image/*" />
@@ -295,61 +294,63 @@
     }
 
     // Загрузка данных пользователя из Firestore
-    function loadUserProfile(uid) {
-      db.collection('users').doc(uid).get()
-        .then(doc => {
-          if (!doc.exists) {
-            displayNameInput.value = '';
-            descriptionInput.value = '';
-            colorSelect.value = '#FFFFFF';
-            registrationDateDiv.textContent = 'Registration Date: Unknown';
-            avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
-            return;
-          }
-          const data = doc.data();
-          displayNameInput.value = data.displayName || '';
-          descriptionInput.value = data.description || '';
-          colorSelect.value = data.nickColor || '#FFFFFF';
-          if(data.createdAt && data.createdAt.toDate) {
-            registrationDateDiv.textContent = 'Registration Date: ' + data.createdAt.toDate().toLocaleDateString();
-          } else {
-            registrationDateDiv.textContent = 'Registration Date: Unknown';
-          }
-          if(data.avatarUrl) {
-            avatarImg.src = data.avatarUrl;
-          } else {
-            avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
-          }
-        })
-        .catch(() => {
+    async function loadUserProfile(uid) {
+      try {
+        const doc = await db.collection('users').doc(uid).get();
+
+        if (!doc.exists) {
+          displayNameInput.value = '';
+          descriptionInput.value = '';
+          colorSelect.value = '#FFFFFF';
           registrationDateDiv.textContent = 'Registration Date: Unknown';
           avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
-        });
+          return;
+        }
+        const data = doc.data();
+        displayNameInput.value = data.displayName || '';
+        descriptionInput.value = data.description || '';
+        colorSelect.value = data.nickColor || '#FFFFFF';
+        displayNameInput.style.color = colorSelect.value;
+
+        if(data.createdAt && data.createdAt.toDate) {
+          registrationDateDiv.textContent = 'Registration Date: ' + data.createdAt.toDate().toLocaleDateString();
+        } else {
+          registrationDateDiv.textContent = 'Registration Date: Unknown';
+        }
+
+        if(data.avatarUrl) {
+          avatarImg.src = data.avatarUrl;
+        } else {
+          avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
+        }
+      } catch {
+        registrationDateDiv.textContent = 'Registration Date: Unknown';
+        avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
+      }
 
       loadUserPastes(uid);
     }
 
     // Загрузка паст из Firestore для текущего пользователя
-    function loadUserPastes(uid) {
+    async function loadUserPastes(uid) {
       userPastesList.innerHTML = 'Loading...';
-      db.collection('pastes').where('ownerUID', '==', uid).orderBy('createdAt', 'desc').get()
-        .then(snapshot => {
-          if(snapshot.empty) {
-            userPastesList.innerHTML = '<p>No pastes found.</p>';
-            return;
-          }
-          userPastesList.innerHTML = '';
-          snapshot.forEach(doc => {
-            const paste = doc.data();
-            const div = document.createElement('div');
-            div.textContent = paste.title || 'Untitled';
-            div.onclick = () => window.location.href = `paste.html?id=${doc.id}`;
-            userPastesList.appendChild(div);
-          });
-        })
-        .catch(() => {
-          userPastesList.innerHTML = '<p>Error loading pastes.</p>';
+      try {
+        const snapshot = await db.collection('pastes').where('ownerUID', '==', uid).orderBy('createdAt', 'desc').get();
+        if(snapshot.empty) {
+          userPastesList.innerHTML = '<p>No pastes found.</p>';
+          return;
+        }
+        userPastesList.innerHTML = '';
+        snapshot.forEach(doc => {
+          const paste = doc.data();
+          const div = document.createElement('div');
+          div.textContent = paste.title || 'Untitled';
+          div.onclick = () => window.location.href = `paste.html?id=${doc.id}`;
+          userPastesList.appendChild(div);
         });
+      } catch {
+        userPastesList.innerHTML = '<p>Error loading pastes.</p>';
+      }
     }
 
     // Загрузка и получение ссылки на аватар из Firebase Storage
@@ -387,14 +388,16 @@
           avatarUrl = userDoc.exists ? userDoc.data().avatarUrl : null;
         }
 
+        const userDoc = await db.collection('users').doc(currentUserUID).get();
+        const createdAt = userDoc.exists && userDoc.data().createdAt ? userDoc.data().createdAt : firebase.firestore.FieldValue.serverTimestamp();
+
         await db.collection('users').doc(currentUserUID).set({
           displayName,
           description,
           nickColor,
           avatarUrl,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          // Если нет createdAt — поставить сейчас
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          createdAt
         }, { merge: true });
 
         showSuccess('Profile saved successfully!');
@@ -419,12 +422,26 @@
       }
     };
 
+    // Подсветка ника цветом при смене выбора
+    colorSelect.onchange = () => {
+      clearMessages();
+      displayNameInput.style.color = colorSelect.value;
+    };
+
+    // Очистка сообщений при вводе
+    displayNameInput.oninput = clearMessages;
+    descriptionInput.oninput = clearMessages;
+
+    // Проверка авторизации и загрузка профиля
     firebase.auth().onAuthStateChanged(user => {
       if(user) {
         currentUserUID = user.uid;
         loadUserProfile(user.uid);
       } else {
-        document.getElementById('profile-container').innerHTML = '<p style="text-align:center;">You must be logged in to view this page.</p>';
+        document.getElementById('profile-container').innerHTML = `
+          <p style="text-align:center; color: #bbb;">
+            You must be logged in to view this page. <a href="login.html" style="color:#8e44ad;">Login here</a>
+          </p>`;
       }
     });
   </script>
