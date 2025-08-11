@@ -14,7 +14,7 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    /* Фон с падающими точками */
+    /* твои стили здесь (сохранил их без изменений) */
     body, html {
       margin: 0; padding: 0; height: 100%;
       background: #000;
@@ -30,7 +30,6 @@
       height: 100%;
       z-index: 0;
     }
-
     .main-content {
       position: relative;
       z-index: 1;
@@ -41,7 +40,6 @@
       padding: 20px;
       box-sizing: border-box;
     }
-
     h1 {
       font-size: 40px;
       font-weight: bold;
@@ -58,7 +56,6 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-
     #users-list {
       width: 100%;
       max-width: 700px;
@@ -70,7 +67,6 @@
       font-family: monospace;
       font-weight: bold;
     }
-
     .user-item {
       display: flex;
       justify-content: space-between;
@@ -82,14 +78,12 @@
     .user-item:hover {
       background-color: #4a148c;
     }
-
     .user-name {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 70%;
     }
-
     .user-role {
       text-transform: uppercase;
       padding: 2px 8px;
@@ -105,7 +99,6 @@
     .role-coder { background-color: #6a1b9a; color: #fff; }
     .role-rich { background-color: #4a148c; color: #fff; }
     .role-user { background-color: #222; color: #bbb; font-weight: normal; }
-
     #pagination {
       margin-top: 20px;
       text-align: center;
@@ -208,6 +201,91 @@
       animate();
     })();
 
-    // === Firebase + Users ===
+    // === Firebase users loading and pagination ===
     const db = firebase.firestore();
-    const usersList = document.getElement
+    const usersList = document.getElementById('users-list');
+    const pagination = document.getElementById('pagination');
+
+    let allUsers = [];
+    let currentPage = 1;
+    const itemsPerPage = 15;
+
+    const roleColorClass = {
+      admin: 'role-admin',
+      coowner: 'role-coowner',
+      coder: 'role-coder',
+      rich: 'role-rich',
+      user: 'role-user',
+    };
+
+    function loadUsers() {
+      usersList.textContent = 'Loading users...';
+      db.collection('users').orderBy('createdAt', 'desc').get()
+        .then(snapshot => {
+          allUsers = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            allUsers.push({
+              uid: doc.id,
+              name: data.displayName || data.username || 'Unknown',
+              role: data.role || 'user',
+              createdAt: data.createdAt ? data.createdAt.toDate() : new Date()
+            });
+          });
+          if(allUsers.length === 0) {
+            usersList.textContent = 'No users found.';
+          } else {
+            renderUsers();
+            renderPagination();
+          }
+        })
+        .catch(error => {
+          console.error('Error loading users:', error);
+          usersList.textContent = 'Error loading users.';
+        });
+    }
+
+    function renderUsers() {
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const pagedUsers = allUsers.slice(start, end);
+
+      usersList.innerHTML = '';
+      pagedUsers.forEach(user => {
+        const div = document.createElement('div');
+        div.className = 'user-item';
+        const roleClass = roleColorClass[user.role.toLowerCase()] || roleColorClass.user;
+        div.innerHTML = `
+          <div class="user-name">${user.name}</div>
+          <div class="user-role ${roleClass}">${user.role}</div>
+        `;
+        div.onclick = () => {
+          window.location.href = `profile.html?uid=${user.uid}`;
+        };
+        usersList.appendChild(div);
+      });
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(allUsers.length / itemsPerPage);
+      pagination.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      for(let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if(i === currentPage) btn.classList.add('active');
+        btn.onclick = () => {
+          currentPage = i;
+          renderUsers();
+          renderPagination();
+          window.scrollTo({top:0, behavior:'smooth'});
+        };
+        pagination.appendChild(btn);
+      }
+    }
+
+    window.onload = loadUsers;
+  </script>
+</body>
+</html>
