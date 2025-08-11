@@ -4,14 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>View Paste - Rustbin</title>
-  <link rel="stylesheet" href="style.css" />
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase config -->
   <script src="firebase-config.js"></script>
 
   <style>
@@ -19,7 +17,8 @@
       background-color: #000;
       color: white;
       font-family: Arial, sans-serif;
-      margin: 0; padding: 20px;
+      margin: 0; 
+      padding: 20px;
       max-width: 700px;
       margin-left: auto;
       margin-right: auto;
@@ -27,34 +26,62 @@
     .back-button {
       background-color: red;
       border: none;
-      padding: 10px 20px;
+      padding: 12px 24px;
       color: white;
       font-weight: bold;
       cursor: pointer;
-      border-radius: 4px;
-      margin-bottom: 20px;
+      border-radius: 6px;
+      margin-bottom: 25px;
+      font-family: monospace;
+      transition: background-color 0.3s;
+      box-shadow: 0 0 10px red;
+    }
+    .back-button:hover {
+      background-color: #c00;
+      box-shadow: 0 0 15px #c00;
     }
     h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
+      font-size: 36px;
+      margin-bottom: 12px;
+      font-weight: bold;
+      font-family: monospace;
+      background: linear-gradient(270deg, #8e44ad, #ffffff);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 4s ease infinite;
+      user-select: none;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
     .author {
       color: #ff5555;
       margin-bottom: 20px;
       font-style: italic;
+      font-family: monospace;
+      user-select: none;
     }
     .content {
       background-color: #111;
-      padding: 15px;
-      border-radius: 6px;
+      padding: 20px;
+      border-radius: 8px;
       white-space: pre-wrap;
       font-family: monospace;
       font-size: 16px;
+      line-height: 1.5;
+      box-shadow: 0 0 15px #8e44ad;
+      user-select: text;
     }
     .error {
       color: #dc3545;
       font-weight: bold;
       font-size: 20px;
+      font-family: monospace;
+      text-align: center;
+      margin-top: 40px;
     }
   </style>
 </head>
@@ -62,9 +89,7 @@
 
   <button class="back-button" onclick="goHome()">← Back to Home</button>
 
-  <div id="paste-container">
-    <!-- Здесь будет паста -->
-  </div>
+  <div id="paste-container">Loading paste...</div>
 
   <script>
     const db = firebase.firestore();
@@ -83,6 +108,16 @@
       container.innerHTML = `<div class="error">${message}</div>`;
     }
 
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
     function loadPaste(id) {
       db.collection('pastes').doc(id).get()
         .then(doc => {
@@ -92,10 +127,16 @@
           }
           const data = doc.data();
           const container = document.getElementById('paste-container');
+
+          // Защищаем от XSS и показываем красиво
+          const safeTitle = escapeHtml(data.title) || 'Untitled';
+          const safeContent = escapeHtml(data.content) || '';
+          const author = data.anonymous ? 'Anonymous' : (data.username || 'Unknown');
+
           container.innerHTML = `
-            <h1>${data.title || 'Untitled'}</h1>
-            <div class="author">Posted by: ${data.username || 'Anonymous'}</div>
-            <pre class="content">${data.content || ''}</pre>
+            <h1>${safeTitle}</h1>
+            <div class="author">Posted by: ${author}</div>
+            <pre class="content">${safeContent}</pre>
           `;
         })
         .catch(err => {
@@ -107,7 +148,6 @@
     window.onload = () => {
       const pasteId = getPasteId();
       if (!pasteId) {
-        // Если ID нет — сразу на главную
         window.location.href = 'index.html';
         return;
       }
