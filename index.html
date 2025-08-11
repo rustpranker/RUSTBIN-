@@ -311,8 +311,7 @@
             id: doc.id,
             title: paste.title || 'Untitled',
             content: paste.content || '',
-            createdAt: paste.createdAt ? paste.createdAt.toDate() : new Date(),
-            views: paste.views || 0
+            createdAt: paste.createdAt ? paste.createdAt.toDate() : new Date()
           });
         });
         counterDiv.textContent = `Loaded ${allPastes.length} of ${allPastes.length}`;
@@ -332,17 +331,11 @@
       div.innerHTML = `
         <div>
           ${paste.title}
-          <div class="paste-meta">${paste.views} views • ${paste.createdAt.toLocaleDateString()}</div>
+          <div class="paste-meta">${paste.createdAt.toLocaleDateString()}</div>
         </div>
       `;
       div.onclick = () => {
-        // При клике увеличиваем просмотры, затем открываем пасту
-        const pasteRef = db.collection('pastes').doc(paste.id);
-        pasteRef.update({
-          views: firebase.firestore.FieldValue.increment(1)
-        }).finally(() => {
-          window.location.href = `paste.html?id=${paste.id}`;
-        });
+        window.location.href = `paste.html?id=${paste.id}`;
       };
       pastesList.appendChild(div);
     });
