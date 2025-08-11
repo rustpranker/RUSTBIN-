@@ -5,55 +5,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Profile - Rustbin</title>
 
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
 
+  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
 
   <style>
-    /* Фон с падающими точками */
-    body, html {
-      margin: 0; padding: 0; height: 100%;
-      background: #000;
-      overflow-x: hidden;
-      font-family: Arial, sans-serif;
-      color: white;
-      position: relative;
+    * {
+      box-sizing: border-box;
     }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000;
+      font-family: 'Fira Code', monospace;
+      color: white;
+      overflow-x: hidden;
+    }
+
     canvas#backgroundCanvas {
       position: fixed;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       z-index: 0;
     }
 
-    /* Основной контейнер */
     .main-content {
       position: relative;
       z-index: 1;
-      min-height: 100vh;
+      padding: 30px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
+      max-width: 800px;
+      margin: 0 auto;
     }
 
     h1 {
-      font-size: 40px;
-      font-weight: bold;
-      margin-bottom: 25px;
+      font-size: 2.5em;
       background: linear-gradient(270deg, #8e44ad, #ffffff);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: gradientMove 4s ease infinite;
-      user-select: none;
+      margin-bottom: 30px;
     }
+
     @keyframes gradientMove {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
@@ -61,30 +69,27 @@
     }
 
     .profile-container {
-      background-color: #111;
+      background: #111;
+      padding: 25px;
       border-radius: 8px;
-      padding: 20px;
       width: 100%;
-      max-width: 600px;
       box-shadow: 0 0 20px #8e44ad;
-      box-sizing: border-box;
     }
 
     .avatar {
+      display: block;
       width: 150px;
       height: 150px;
       border-radius: 50%;
-      background-color: #222;
       object-fit: cover;
-      display: block;
-      margin: 0 auto 20px auto;
       border: 3px solid #8e44ad;
+      margin: 0 auto 20px;
     }
 
     label {
-      display: block;
-      margin: 10px 0 6px;
+      margin-top: 15px;
       font-weight: bold;
+      display: block;
     }
 
     input[type="file"],
@@ -92,51 +97,55 @@
     textarea,
     select {
       width: 100%;
-      padding: 8px;
-      border-radius: 6px;
+      background: #222;
+      color: #fff;
       border: none;
-      outline: none;
+      border-radius: 6px;
+      padding: 10px;
       font-size: 14px;
-      background-color: #222;
-      color: white;
-      resize: vertical;
+      margin-top: 5px;
     }
 
     textarea {
+      resize: vertical;
       min-height: 80px;
     }
 
     button {
-      margin-top: 15px;
+      margin-top: 20px;
       background-color: #8e44ad;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 6px;
       color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
+
     button:hover {
       background-color: #6a1b9a;
     }
 
     .info {
-      margin-bottom: 10px;
+      margin-top: 15px;
       font-size: 14px;
       color: #bbb;
       text-align: center;
     }
 
+    .error, .success {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
     .error {
       color: #ff5555;
-      margin-top: 10px;
-      text-align: center;
     }
+
     .success {
       color: #55ff55;
-      margin-top: 10px;
-      text-align: center;
     }
 
     #userPastesList > div {
@@ -144,9 +153,21 @@
       padding: 6px 0;
       cursor: pointer;
     }
+
     #userPastesList > div:hover {
       color: #8e44ad;
       text-decoration: underline;
+    }
+
+    @media screen and (max-width: 600px) {
+      .profile-container {
+        padding: 15px;
+      }
+
+      .avatar {
+        width: 120px;
+        height: 120px;
+      }
     }
   </style>
 </head>
@@ -191,8 +212,8 @@
     </div>
   </div>
 
+  <!-- Background Animation -->
   <script>
-    // === Падающие точки фон ===
     (() => {
       const canvas = document.getElementById('backgroundCanvas');
       const ctx = canvas.getContext('2d');
@@ -242,208 +263,4 @@
         }
       }
 
-      for(let i = 0; i < dotsCount; i++) {
-        dots.push(new Dot());
-      }
-
-      function animate() {
-        ctx.clearRect(0, 0, width, height);
-        dots.forEach(dot => {
-          dot.update();
-          dot.draw();
-        });
-        requestAnimationFrame(animate);
-      }
-      animate();
-    })();
-
-    // === Firebase auth + Firestore + Storage ===
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-
-    const avatarImg = document.getElementById('avatar');
-    const avatarInput = document.getElementById('avatarInput');
-    const displayNameInput = document.getElementById('displayNameInput');
-    const descriptionInput = document.getElementById('descriptionInput');
-    const colorSelect = document.getElementById('colorSelect');
-    const registrationDateDiv = document.getElementById('registrationDate');
-    const saveBtn = document.getElementById('saveProfileBtn');
-    const successMsg = document.getElementById('successMsg');
-    const errorMsg = document.getElementById('errorMsg');
-    const userPastesList = document.getElementById('userPastesList');
-
-    let currentUserUID = null;
-    let avatarFile = null;
-
-    function showError(msg) {
-      errorMsg.textContent = msg;
-      errorMsg.style.display = 'block';
-      successMsg.style.display = 'none';
-    }
-
-    function showSuccess(msg) {
-      successMsg.textContent = msg;
-      successMsg.style.display = 'block';
-      errorMsg.style.display = 'none';
-    }
-
-    function clearMessages() {
-      successMsg.style.display = 'none';
-      errorMsg.style.display = 'none';
-    }
-
-    // Загрузка данных пользователя из Firestore
-    async function loadUserProfile(uid) {
-      try {
-        const doc = await db.collection('users').doc(uid).get();
-
-        if (!doc.exists) {
-          displayNameInput.value = '';
-          descriptionInput.value = '';
-          colorSelect.value = '#FFFFFF';
-          registrationDateDiv.textContent = 'Registration Date: Unknown';
-          avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
-          return;
-        }
-        const data = doc.data();
-        displayNameInput.value = data.displayName || '';
-        descriptionInput.value = data.description || '';
-        colorSelect.value = data.nickColor || '#FFFFFF';
-        displayNameInput.style.color = colorSelect.value;
-
-        if(data.createdAt && data.createdAt.toDate) {
-          registrationDateDiv.textContent = 'Registration Date: ' + data.createdAt.toDate().toLocaleDateString();
-        } else {
-          registrationDateDiv.textContent = 'Registration Date: Unknown';
-        }
-
-        if(data.avatarUrl) {
-          avatarImg.src = data.avatarUrl;
-        } else {
-          avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
-        }
-      } catch {
-        registrationDateDiv.textContent = 'Registration Date: Unknown';
-        avatarImg.src = 'https://via.placeholder.com/150?text=No+Avatar';
-      }
-
-      loadUserPastes(uid);
-    }
-
-    // Загрузка паст из Firestore для текущего пользователя
-    async function loadUserPastes(uid) {
-      userPastesList.innerHTML = 'Loading...';
-      try {
-        const snapshot = await db.collection('pastes').where('ownerUID', '==', uid).orderBy('createdAt', 'desc').get();
-        if(snapshot.empty) {
-          userPastesList.innerHTML = '<p>No pastes found.</p>';
-          return;
-        }
-        userPastesList.innerHTML = '';
-        snapshot.forEach(doc => {
-          const paste = doc.data();
-          const div = document.createElement('div');
-          div.textContent = paste.title || 'Untitled';
-          div.onclick = () => window.location.href = `paste.html?id=${doc.id}`;
-          userPastesList.appendChild(div);
-        });
-      } catch {
-        userPastesList.innerHTML = '<p>Error loading pastes.</p>';
-      }
-    }
-
-    // Загрузка и получение ссылки на аватар из Firebase Storage
-    function uploadAvatar(uid, file) {
-      const storageRef = storage.ref();
-      const ext = file.name.split('.').pop();
-      const avatarRef = storageRef.child(`avatars/${uid}_${Date.now()}.${ext}`);
-      return avatarRef.put(file).then(snapshot => snapshot.ref.getDownloadURL());
-    }
-
-    saveBtn.onclick = async () => {
-      clearMessages();
-      if (!currentUserUID) {
-        showError('User not logged in');
-        return;
-      }
-
-      const displayName = displayNameInput.value.trim();
-      const description = descriptionInput.value.trim();
-      const nickColor = colorSelect.value;
-
-      if(displayName.length === 0) {
-        showError('Display name cannot be empty');
-        return;
-      }
-
-      saveBtn.disabled = true;
-      try {
-        let avatarUrl;
-
-        if (avatarFile) {
-          avatarUrl = await uploadAvatar(currentUserUID, avatarFile);
-        } else {
-          const userDoc = await db.collection('users').doc(currentUserUID).get();
-          avatarUrl = userDoc.exists ? userDoc.data().avatarUrl : null;
-        }
-
-        const userDoc = await db.collection('users').doc(currentUserUID).get();
-        const createdAt = userDoc.exists && userDoc.data().createdAt ? userDoc.data().createdAt : firebase.firestore.FieldValue.serverTimestamp();
-
-        await db.collection('users').doc(currentUserUID).set({
-          displayName,
-          description,
-          nickColor,
-          avatarUrl,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          createdAt
-        }, { merge: true });
-
-        showSuccess('Profile saved successfully!');
-        avatarFile = null;
-        loadUserProfile(currentUserUID);
-      } catch (e) {
-        showError('Failed to save profile: ' + e.message);
-      }
-      saveBtn.disabled = false;
-    };
-
-    avatarInput.onchange = (e) => {
-      if(e.target.files && e.target.files[0]) {
-        const file = e.target.files[0];
-        if(!file.type.startsWith('image/')) {
-          showError('File must be an image');
-          return;
-        }
-        avatarFile = file;
-        avatarImg.src = URL.createObjectURL(file);
-        clearMessages();
-      }
-    };
-
-    // Подсветка ника цветом при смене выбора
-    colorSelect.onchange = () => {
-      clearMessages();
-      displayNameInput.style.color = colorSelect.value;
-    };
-
-    // Очистка сообщений при вводе
-    displayNameInput.oninput = clearMessages;
-    descriptionInput.oninput = clearMessages;
-
-    // Проверка авторизации и загрузка профиля
-    firebase.auth().onAuthStateChanged(user => {
-      if(user) {
-        currentUserUID = user.uid;
-        loadUserProfile(user.uid);
-      } else {
-        document.getElementById('profile-container').innerHTML = `
-          <p style="text-align:center; color: #bbb;">
-            You must be logged in to view this page. <a href="login.html" style="color:#8e44ad;">Login here</a>
-          </p>`;
-      }
-    });
-  </script>
-</body>
-</html>
+      for(let i = 0; i < dotsCount; i
