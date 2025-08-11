@@ -10,7 +10,19 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-  <script src="firebase-config.js"></script>
+  <script>
+    // Firebase config и инициализация
+    const firebaseConfig = {
+      apiKey: "AIzaSyBi9hhKmd1M-lgWQiweCedaENKAu5ATJvg",
+      authDomain: "test-f5bde.firebaseapp.com",
+      projectId: "test-f5bde",
+      storageBucket: "test-f5bde.appspot.com",
+      messagingSenderId: "803807833739",
+      appId: "1:803807833739:web:0757e8aa0356a2d3d2ee8e",
+      measurementId: "G-1TXEM2T541"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
 
   <style>
     body {
@@ -167,7 +179,7 @@
     }
 
     function renderUsers() {
-      const start = (currentPage -1) * itemsPerPage;
+      const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
       const pagedUsers = allUsers.slice(start, end);
 
