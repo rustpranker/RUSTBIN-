@@ -3,50 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Profile - Rustbin</title>
+  <title>My Profile - Rustbin</title>
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
-
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
-
-  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
 
   <style>
-    * { box-sizing: border-box; }
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #000;
-      font-family: 'Fira Code', monospace;
+    body {
+      background-color: #0d0d0d;
       color: white;
-      overflow-x: hidden;
+      font-family: monospace;
+      margin: 0; padding: 0;
+      min-height: 100vh;
     }
-    canvas#backgroundCanvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 0;
-    }
-    .main-content {
-      position: relative;
-      z-index: 1;
-      padding: 30px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      max-width: 800px;
-      margin: 0 auto;
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      box-shadow: 0 0 15px #6a1b9a;
     }
     h1 {
+      text-align: center;
       font-size: 2.5em;
-      background: linear-gradient(270deg, #8e44ad, #ffffff);
+      background: linear-gradient(270deg, #6a1b9a, #fff);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -54,238 +39,196 @@
       margin-bottom: 30px;
     }
     @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    .profile-container {
-      background: #111;
-      padding: 25px;
-      border-radius: 8px;
-      width: 100%;
-      box-shadow: 0 0 20px #8e44ad;
-    }
-    .avatar {
-      display: block;
-      width: 150px; height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid #8e44ad;
-      margin: 0 auto 20px;
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
     }
     label {
+      display: block;
       margin-top: 15px;
       font-weight: bold;
-      display: block;
     }
-    input[type="file"], input[type="text"], textarea, select {
+    input[type="text"], select, textarea {
       width: 100%;
       background: #222;
-      color: #fff;
+      color: #eee;
       border: none;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 14px;
+      border-radius: 5px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 16px;
       margin-top: 5px;
+      box-sizing: border-box;
     }
-    textarea { resize: vertical; min-height: 80px; }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    #avatarPreview {
+      display: block;
+      margin: 20px auto;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #6a1b9a;
+      box-shadow: 0 0 10px #6a1b9a;
+      cursor: pointer;
+    }
     button {
       margin-top: 20px;
-      background-color: #8e44ad;
-      color: white;
+      width: 100%;
+      background: #6a1b9a;
       border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
+      color: white;
       font-weight: bold;
+      padding: 12px;
+      border-radius: 6px;
       cursor: pointer;
+      font-size: 16px;
       transition: background-color 0.3s ease;
     }
-    button:hover:not(:disabled) { background-color: #6a1b9a; }
-    button:disabled { background-color: #4a148c; cursor: not-allowed; }
-    .info { margin-top: 15px; font-size: 14px; color: #bbb; text-align: center; }
-    .error, .success {
+    button:hover:not(:disabled) {
+      background: #8e44ad;
+    }
+    button:disabled {
+      background: #4a148c;
+      cursor: not-allowed;
+    }
+    .message {
+      margin-top: 15px;
       text-align: center;
-      margin-top: 10px;
       font-weight: bold;
     }
-    .error { color: #ff5555; }
-    .success { color: #55ff55; }
-    #userPastesList > div {
-      border-bottom: 1px solid #333;
-      padding: 6px 0;
-      cursor: pointer;
+    .message.success {
+      color: #55ff55;
     }
-    #userPastesList > div:hover {
-      color: #8e44ad;
-      text-decoration: underline;
-    }
-    #backHomeBtn { margin-top: 15px; background-color: #555; }
-    #backHomeBtn:hover { background-color: #888; }
-    @media screen and (max-width: 600px) {
-      .profile-container { padding: 15px; }
-      .avatar { width: 120px; height: 120px; }
+    .message.error {
+      color: #ff5555;
     }
   </style>
 </head>
 <body>
-  <canvas id="backgroundCanvas"></canvas>
-  <div class="main-content">
-    <h1>Profile</h1>
-    <div class="profile-container">
-      <img src="" alt="Avatar" id="avatar" class="avatar" onerror="this.src='https://via.placeholder.com/150?text=No+Avatar'" />
-      <label for="avatarInput">Change Avatar:</label>
-      <input type="file" id="avatarInput" accept="image/*" />
-      <label for="displayNameInput">Display Name / Nickname:</label>
-      <input type="text" id="displayNameInput" maxlength="30" placeholder="Enter your display name" />
-      <label for="colorSelect">Nickname Color:</label>
-      <select id="colorSelect">
-        <option value="#FFFFFF">White</option>
-        <option value="#FF0000">Red</option>
-        <option value="#800080">Purple</option>
-        <option value="#008000">Green</option>
-        <option value="#FFFF00">Yellow</option>
-        <option value="#4a148c">Dark Violet</option>
-        <option value="#d1b3ff">Light Purple</option>
-      </select>
-      <label for="descriptionInput">Description / About You:</label>
-      <textarea id="descriptionInput" placeholder="Write something about yourself..."></textarea>
-      <div class="info" id="registrationDate">Registration Date: --</div>
-      <button id="saveProfileBtn">Save Profile</button>
-      <button id="backHomeBtn" type="button">Back to Home</button>
-      <div class="success" id="successMsg" style="display:none;">sucefull !</div>
-      <div class="error" id="errorMsg" style="display:none;">incorrect</div>
-      <h2 style="margin-top:30px; text-align:center;">Your Pastes</h2>
-      <div id="userPastesList" style="max-height: 250px; overflow-y: auto;"></div>
-    </div>
-  </div>
 
-  <!-- Background Animation -->
-  <script>
-    (() => {
-      const canvas = document.getElementById('backgroundCanvas');
-      const ctx = canvas.getContext('2d');
-      let width, height;
-      const dotsCount = 100, dots = [];
-      const random = (min, max) => Math.random() * (max - min) + min;
-      function resize() {
-        width = window.innerWidth; height = window.innerHeight;
-        canvas.width = width; canvas.height = height;
-      }
-      window.addEventListener('resize', resize); resize();
-      class Dot {
-        constructor() { this.x = random(0, width); this.y = random(0, height);
-          this.radius = random(1, 3); this.speedY = random(0.5, 1.5);
-          this.alpha = random(0.1, 0.8); }
-        update() { this.y += this.speedY;
-          if (this.y > height) { this.x = random(0, width); this.y = -this.radius;
-            this.radius = random(1, 3); this.speedY = random(0.5, 1.5);
-            this.alpha = random(0.1, 0.8); } }
-        draw() { ctx.beginPath(); ctx.fillStyle = `rgba(142, 68, 173, ${this.alpha})`;
-          ctx.shadowColor = 'rgba(142, 68, 173, 0.7)'; ctx.shadowBlur = 8;
-          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.closePath(); }
-      }
-      for (let i = 0; i < dotsCount; i++) dots.push(new Dot());
-      function animate() {
-        ctx.clearRect(0, 0, width, height);
-        dots.forEach(dot => { dot.update(); dot.draw(); });
-        requestAnimationFrame(animate);
-      }
-      animate();
-    })();
-  </script>
+  <div class="container">
+    <h1>My Profile</h1>
+
+    <img src="https://via.placeholder.com/140?text=Avatar" alt="Avatar" id="avatarPreview" title="Click to change avatar" />
+
+    <input type="file" id="avatarInput" accept="image/*" style="display:none;" />
+
+    <label for="displayName">Display Name / Nickname:</label>
+    <input type="text" id="displayName" maxlength="30" placeholder="Enter your display name" />
+
+    <label for="colorSelect">Nickname Color:</label>
+    <select id="colorSelect">
+      <option value="#FFFFFF">White</option>
+      <option value="#FF0000">Red</option>
+      <option value="#800080">Purple</option>
+      <option value="#008000">Green</option>
+      <option value="#FFFF00">Yellow</option>
+      <option value="#6a1b9a">Dark Violet</option>
+      <option value="#d1b3ff">Light Purple</option>
+    </select>
+
+    <label for="description">Description / About You:</label>
+    <textarea id="description" placeholder="Write something about yourself..."></textarea>
+
+    <button id="saveBtn">Save Profile</button>
+
+    <div id="message" class="message" style="display:none;"></div>
+  </div>
 
   <script>
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
 
-    const avatarImg = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatarPreview');
     const avatarInput = document.getElementById('avatarInput');
-    const displayNameInput = document.getElementById('displayNameInput');
+    const displayNameInput = document.getElementById('displayName');
     const colorSelect = document.getElementById('colorSelect');
-    const descriptionInput = document.getElementById('descriptionInput');
-    const registrationDateDiv = document.getElementById('registrationDate');
-    const saveBtn = document.getElementById('saveProfileBtn');
-    const successMsg = document.getElementById('successMsg');
-    const errorMsg = document.getElementById('errorMsg');
-    const backHomeBtn = document.getElementById('backHomeBtn');
+    const descriptionInput = document.getElementById('description');
+    const saveBtn = document.getElementById('saveBtn');
+    const messageDiv = document.getElementById('message');
 
     let currentUser = null;
     let currentAvatarFile = null;
 
+    // Клик по аватарке открывает выбор файла
+    avatarPreview.addEventListener('click', () => {
+      avatarInput.click();
+    });
+
+    // Превью выбранного файла
     avatarInput.addEventListener('change', e => {
       const file = e.target.files[0];
       if (file) {
         currentAvatarFile = file;
         const reader = new FileReader();
-        reader.onload = e => { avatarImg.src = e.target.result; };
+        reader.onload = ev => {
+          avatarPreview.src = ev.target.result;
+        };
         reader.readAsDataURL(file);
       }
     });
 
-    backHomeBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
+    // Загрузка данных профиля
+    function loadProfile() {
+      if (!currentUser) return;
 
-    function loadUserProfile(uid) {
-      db.collection('users').doc(uid).get()
+      db.collection('users').doc(currentUser.uid).get()
         .then(doc => {
-          const data = doc.exists ? doc.data() : {};
-          avatarImg.src = data.avatarURL || 'https://via.placeholder.com/150?text=No+Avatar';
+          if (!doc.exists) {
+            // Если нет данных, установить дефолт
+            avatarPreview.src = 'https://via.placeholder.com/140?text=Avatar';
+            displayNameInput.value = '';
+            colorSelect.value = '#FFFFFF';
+            descriptionInput.value = '';
+            return;
+          }
+          const data = doc.data();
+          avatarPreview.src = data.avatarURL || 'https://via.placeholder.com/140?text=Avatar';
           displayNameInput.value = data.displayName || '';
           colorSelect.value = data.color || '#FFFFFF';
           descriptionInput.value = data.description || '';
-          // Дата из Firestore или auth
-          if (data.createdAt && data.createdAt.toDate) {
-            registrationDateDiv.textContent = 'Registration Date: ' + data.createdAt.toDate().toLocaleDateString();
-          } else if (currentUser && currentUser.metadata.creationTime) {
-            registrationDateDiv.textContent = 'Registration Date: ' + new Date(currentUser.metadata.creationTime).toLocaleDateString();
-          }
-          loadUserPastes(uid);
         })
         .catch(err => {
+          showMessage('Error loading profile', true);
           console.error(err);
-          registrationDateDiv.textContent = 'Registration Date: ' + (currentUser?.metadata?.creationTime ? new Date(currentUser.metadata.creationTime).toLocaleDateString() : '--');
-          loadUserPastes(uid);
         });
     }
 
-    function loadUserPastes(uid) {
-      const pastesList = document.getElementById('userPastesList');
-      pastesList.textContent = 'Loading pastes...';
-      db.collection('pastes').where('ownerId', '==', uid).orderBy('createdAt', 'desc').limit(10).get()
-        .then(snapshot => {
-          if (snapshot.empty) {
-            pastesList.textContent = 'No pastes found.';
-            return;
-          }
-          pastesList.innerHTML = '';
-          snapshot.forEach(doc => {
-            const paste = doc.data();
-            const div = document.createElement('div');
-            div.textContent = paste.title || '(Untitled)';
-            div.onclick = () => { window.location.href = `paste.html?id=${doc.id}`; };
-            pastesList.appendChild(div);
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          pastesList.textContent = 'Error loading pastes.';
-        });
+    // Показываем сообщение
+    function showMessage(text, isError = false) {
+      messageDiv.style.display = 'block';
+      messageDiv.textContent = text;
+      if (isError) {
+        messageDiv.classList.remove('success');
+        messageDiv.classList.add('error');
+      } else {
+        messageDiv.classList.remove('error');
+        messageDiv.classList.add('success');
+      }
     }
 
+    // Сохраняем профиль
     saveBtn.addEventListener('click', async () => {
       if (!currentUser) return;
       saveBtn.disabled = true;
-      successMsg.style.display = 'none';
-      errorMsg.style.display = 'none';
+      showMessage('', false);
+
       try {
-        let avatarURL = avatarImg.src;
+        let avatarURL = avatarPreview.src;
+
+        // Если выбрали новый аватар - загружаем
         if (currentAvatarFile) {
-          const avatarRef = storage.ref(`avatars/${currentUser.uid}_${Date.now()}.${currentAvatarFile.name.split('.').pop()}`);
-          const snapshot = await avatarRef.put(currentAvatarFile);
-          avatarURL = await snapshot.ref.getDownloadURL();
+          const ext = currentAvatarFile.name.split('.').pop();
+          const avatarRef = storage.ref(`avatars/${currentUser.uid}.${ext}`);
+          await avatarRef.put(currentAvatarFile);
+          avatarURL = await avatarRef.getDownloadURL();
         }
+
         await db.collection('users').doc(currentUser.uid).set({
           displayName: displayNameInput.value.trim(),
           color: colorSelect.value,
@@ -293,24 +236,27 @@
           avatarURL: avatarURL,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-        successMsg.style.display = 'block';
+
+        showMessage('Profile saved successfully!');
         currentAvatarFile = null;
-      } catch (err) {
-        console.error(err);
-        errorMsg.style.display = 'block';
+      } catch (e) {
+        console.error(e);
+        showMessage('Error saving profile', true);
       } finally {
         saveBtn.disabled = false;
       }
     });
 
+    // Авторизация и загрузка профиля
     auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
-        loadUserProfile(user.uid);
+        loadProfile();
       } else {
-        window.location.href = 'index.html';
+        window.location.href = 'login.html'; // если не залогинен - редирект на логин
       }
     });
   </script>
+
 </body>
 </html>
