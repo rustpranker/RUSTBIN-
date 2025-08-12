@@ -4,32 +4,68 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Users - Rustbin</title>
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
 
-  <!-- Firebase -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
 
   <style>
-    body {
+    /* Общие стили и фон с анимацией */
+
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
       font-family: 'Fira Code', monospace;
-      background: #000;
       color: white;
+      overflow-x: hidden;
+      background: linear-gradient(270deg, #001f7f, #000000);
+      background-size: 400% 400%;
+      animation: bgGradient 8s ease infinite;
+      position: relative;
+    }
+
+    @keyframes bgGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Снежинки канвас — поверх всего */
+    canvas#backgroundCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
     }
 
     .main-content {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
       padding: 30px 20px;
-      max-width: 800px;
-      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     h1 {
-      text-align: center;
-      font-size: 2.5em;
-      background: linear-gradient(270deg, #8e44ad, #ffffff);
+      font-size: 3em;
+      margin-bottom: 30px;
+      background: linear-gradient(270deg, #8e44ad, #d1b3ff);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -42,73 +78,225 @@
       100% { background-position: 0% 50%; }
     }
 
-    .user-list {
-      margin-top: 30px;
-    }
-
-    .user-entry {
-      padding: 12px;
-      margin-bottom: 10px;
+    #usersList {
+      width: 100%;
       background: #111;
-      border-left: 5px solid #8e44ad;
+      border-radius: 8px;
+      box-shadow: 0 0 20px #8e44ad;
+      max-height: 500px;
+      overflow-y: auto;
+      padding: 15px;
+      font-size: 18px;
+    }
+
+    #usersList > div {
+      padding: 12px 15px;
+      border-bottom: 1px solid #333;
       cursor: pointer;
-      transition: background 0.2s;
+      color: #d1b3ff;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .user-entry:hover {
-      background: #1b1b1b;
+    #usersList > div:hover {
+      background-color: #8e44ad;
+      color: white;
     }
 
-    .user-name {
-      font-size: 1.2em;
+    .user-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid #d1b3ff;
+      flex-shrink: 0;
+    }
+
+    #backHomeBtn {
+      margin-top: 25px;
+      background-color: #8e44ad;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-size: 18px;
+    }
+
+    #backHomeBtn:hover {
+      background-color: #6a1b9a;
+    }
+
+    .loading {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #bbb;
+    }
+
+    .error {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #ff5555;
       font-weight: bold;
     }
 
-    .user-desc {
-      font-size: 0.9em;
-      color: #bbb;
+    /* Скролл для списка пользователей */
+    #usersList::-webkit-scrollbar {
+      width: 8px;
     }
+    #usersList::-webkit-scrollbar-track {
+      background: #111;
+    }
+    #usersList::-webkit-scrollbar-thumb {
+      background-color: #8e44ad;
+      border-radius: 4px;
+    }
+
   </style>
 </head>
 <body>
+  <canvas id="backgroundCanvas"></canvas>
+
   <div class="main-content">
-    <h1>All Users</h1>
-    <div class="user-list" id="userList">Loading...</div>
+    <h1>Users</h1>
+    <div id="usersList">Loading users...</div>
+    <button id="backHomeBtn" type="button">Back to Home</button>
   </div>
 
+  <!-- Снежинки (фиолетовые) -->
   <script>
-    const db = firebase.firestore();
-    const userList = document.getElementById("userList");
+    (() => {
+      const canvas = document.getElementById('backgroundCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      const flakesCount = 120;
+      const flakes = [];
 
-    db.collection("users").get().then(snapshot => {
-      if (snapshot.empty) {
-        userList.textContent = "No users found.";
-        return;
+      function random(min, max) {
+        return Math.random() * (max - min) + min;
       }
 
-      userList.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const uid = doc.id;
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resize);
+      resize();
 
-        const entry = document.createElement("div");
-        entry.className = "user-entry";
-        entry.style.borderColor = data.color || "#8e44ad";
-        entry.innerHTML = `
-          <div class="user-name" style="color: ${data.color || '#fff'}">${data.displayName || 'Unnamed'}</div>
-          <div class="user-desc">${data.description || 'No description.'}</div>
-        `;
+      class Flake {
+        constructor() {
+          this.x = random(0, width);
+          this.y = random(0, height);
+          this.radius = random(1, 3);
+          this.speedY = random(0.3, 1);
+          this.alpha = random(0.1, 0.8);
+          this.speedX = random(-0.3, 0.3);
+          this.color = `rgba(142, 68, 173, ${this.alpha})`; // фиолетовый
+        }
+        update() {
+          this.y += this.speedY;
+          this.x += this.speedX;
+          if (this.y > height) {
+            this.x = random(0, width);
+            this.y = -this.radius;
+          }
+          if (this.x > width) this.x = 0;
+          else if (this.x < 0) this.x = width;
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.fillStyle = this.color;
+          ctx.shadowColor = 'rgba(142, 68, 173, 0.7)';
+          ctx.shadowBlur = 8;
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
 
-        entry.onclick = () => {
-          window.location.href = `profiles.html?uid=${uid}`;
-        };
+      for (let i = 0; i < flakesCount; i++) {
+        flakes.push(new Flake());
+      }
 
-        userList.appendChild(entry);
-      });
-    }).catch(error => {
-      console.error("Error loading users:", error);
-      userList.textContent = "Error loading users.";
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        flakes.forEach(flake => {
+          flake.update();
+          flake.draw();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
+  </script>
+
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const usersList = document.getElementById('usersList');
+    const backHomeBtn = document.getElementById('backHomeBtn');
+
+    backHomeBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
     });
+
+    // Проверяем авторизацию, загружаем список пользователей
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+      loadUsers();
+    });
+
+    function loadUsers() {
+      usersList.textContent = 'Loading users...';
+
+      db.collection('users')
+        .orderBy('displayName')
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            usersList.textContent = 'No users found.';
+            return;
+          }
+          usersList.innerHTML = '';
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const div = document.createElement('div');
+
+            // Цвет ника - маленький кружок
+            const colorDot = document.createElement('span');
+            colorDot.classList.add('user-color');
+            colorDot.style.backgroundColor = data.color || '#FFFFFF';
+
+            div.appendChild(colorDot);
+
+            // Ник с цветом
+            const nick = document.createElement('span');
+            nick.textContent = data.displayName || '(No name)';
+            nick.style.color = data.color || '#FFFFFF';
+
+            div.appendChild(nick);
+
+            div.onclick = () => {
+              window.location.href = `profiles.html?uid=${doc.id}`;
+            };
+
+            usersList.appendChild(div);
+          });
+        })
+        .catch(err => {
+          usersList.textContent = 'Error loading users.';
+          console.error(err);
+        });
+    }
   </script>
 </body>
 </html>
