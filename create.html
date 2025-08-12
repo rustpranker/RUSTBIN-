@@ -13,19 +13,50 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    body {
-      background-color: #000;
+    /* Фоновый градиент с анимацией */
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Fira Code', monospace;
       color: white;
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 0;
+      background: linear-gradient(270deg, #001f7f, #000000);
+      background-size: 400% 400%;
+      animation: bgGradient 8s ease infinite;
+      position: relative;
+      overflow-x: hidden;
+    }
+    @keyframes bgGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Снежинки канвас */
+    canvas#backgroundCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    body {
       display: flex;
       justify-content: center;
       align-items: flex-start;
       min-height: 100vh;
       padding-top: 50px;
+      box-sizing: border-box;
     }
 
     .create-container {
+      position: relative;
+      z-index: 1;
       background-color: #111;
       padding: 30px;
       border-radius: 8px;
@@ -142,6 +173,8 @@
 </head>
 <body>
 
+  <canvas id="backgroundCanvas"></canvas>
+
   <div class="create-container">
     <h1 class="gradient-text">Create New Paste</h1>
     <input type="text" id="paste-title" placeholder="Paste title" />
@@ -156,6 +189,75 @@
       <button onclick="goHome()">← Back to Home</button>
     </div>
   </div>
+
+  <!-- Снежинки (фиолетовые) -->
+  <script>
+    (() => {
+      const canvas = document.getElementById('backgroundCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      const flakesCount = 120;
+      const flakes = [];
+
+      function random(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      class Flake {
+        constructor() {
+          this.x = random(0, width);
+          this.y = random(0, height);
+          this.radius = random(1, 3);
+          this.speedY = random(0.3, 1);
+          this.alpha = random(0.1, 0.8);
+          this.speedX = random(-0.3, 0.3);
+          this.color = `rgba(142, 68, 173, ${this.alpha})`; // фиолетовый
+        }
+        update() {
+          this.y += this.speedY;
+          this.x += this.speedX;
+          if (this.y > height) {
+            this.x = random(0, width);
+            this.y = -this.radius;
+          }
+          if (this.x > width) this.x = 0;
+          else if (this.x < 0) this.x = width;
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.fillStyle = this.color;
+          ctx.shadowColor = 'rgba(142, 68, 173, 0.7)';
+          ctx.shadowBlur = 8;
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      for (let i = 0; i < flakesCount; i++) {
+        flakes.push(new Flake());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        flakes.forEach(flake => {
+          flake.update();
+          flake.draw();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
+  </script>
 
   <script>
     const auth = firebase.auth();
