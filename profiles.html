@@ -1,133 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF‑8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>User Profile - Rustbin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Fira Code', monospace;
-      background: #000;
-      color: white;
-      overflow-x: hidden;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Profile View - Rustbin</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
 
-    .main-content {
-      padding: 30px 20px;
-      max-width: 800px;
-      margin: auto;
-    }
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 
-    h1 {
-      text-align: center;
-      font-size: 2.5em;
-      background: linear-gradient(270deg, #8e44ad, #ffffff);
-      background-size: 400% 400%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: gradientMove 4s ease infinite;
-    }
+<style>
+  body {
+    margin: 0;
+    font-family: 'Fira Code', monospace;
+    background-color: #000000;
+    color: white;
+    overflow-x: hidden;
+    min-height: 100vh;
+    position: relative;
+  }
 
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
+  .main-content {
+    max-width: 600px;
+    margin: 40px auto;
+    background: rgba(30, 0, 60, 0.85);
+    padding: 30px 25px;
+    border-radius: 12px;
+    box-shadow: 0 0 30px #8e44adaa;
+    position: relative;
+    z-index: 10;
+  }
 
-    .profile-container {
-      background: #111;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 0 20px #8e44ad;
-    }
+  h1 {
+    font-size: 2.4rem;
+    text-align: center;
+    background: linear-gradient(270deg, #8e44ad, #b185db, #ffffff);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientMove 5s ease infinite;
+    margin-bottom: 25px;
+    user-select: none;
+  }
 
-    .avatar {
-      display: block;
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid #8e44ad;
-      margin: 0 auto 20px;
-    }
+  @keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 
-    .label {
-      margin-top: 10px;
-      font-weight: bold;
-    }
+  .avatar {
+    display: block;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 20px;
+    border: 3px solid #8e44ad;
+    background: #111;
+  }
 
-    .info-field {
-      background: #222;
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 5px;
-      color: white;
-    }
+  .field-label {
+    font-weight: bold;
+    margin-top: 15px;
+  }
 
-    .info {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #bbb;
-      text-align: center;
-    }
+  .field-value {
+    margin-top: 6px;
+    background: #222;
+    padding: 10px 12px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
 
-    .paste-entry {
-      padding: 10px;
-      border-bottom: 1px solid #333;
-      cursor: pointer;
-    }
+  .nickname {
+    font-weight: bold;
+    font-size: 1.4rem;
+  }
 
-    .paste-entry:hover {
-      color: #8e44ad;
-    }
+  /* Падающие белые точки (звёздочки) на фоне */
+  .star {
+    position: fixed;
+    top: -10px;
+    color: white;
+    user-select: none;
+    pointer-events: none;
+    font-size: 1em;
+    opacity: 0.8;
+    animation-name: fall, sway;
+    animation-timing-function: linear, ease-in-out;
+    animation-iteration-count: infinite;
+    z-index: 1;
+  }
 
-    button {
-      margin-top: 20px;
-      background-color: #8e44ad;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+  @keyframes fall {
+    0% { transform: translateY(0); opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { transform: translateY(100vh); opacity: 0; }
+  }
 
-    button:hover {
-      background-color: #6a1b9a;
-    }
-  </style>
+  @keyframes sway {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(10px); }
+  }
+</style>
 </head>
 <body>
-  <div class="main-content">
-    <h1>User Profile</h1>
-    <div class="profile-container">
-      <img id="avatar" class="avatar" src="" alt="Avatar" onerror="this.src='https://via.placeholder.com/150?text=No+Avatar'">
-      <div class="label">Nickname:</div>
-      <div class="info-field" id="displayName"></div>
 
-      <div class="label">Description:</div>
-      <div class="info-field" id="description"></div>
+<script>
+  const starCount = 40;
+  for (let i = 0; i < starCount; i++) {
+    const star = document.createElement('div');
+    star.classList.add('star');
+    star.textContent = '•';
+    star.style.left = Math.random() * 100 + 'vw';
+    star.style.fontSize = (Math.random() * 10 + 8) + 'px';
+    star.style.animationDuration = (7 + Math.random() * 10) + 's, ' + (3 + Math.random() * 3) + 's';
+    star.style.animationDelay = (Math.random() * 15) + 's, ' + (Math.random() * 7) + 's';
+    document.body.appendChild(star);
+  }
+</script>
 
-      <div class="label">Registration Date:</div>
-      <div class="info-field" id="registrationDate">--</div>
+<div class="main-content">
+  <h1>Profile View</h1>
+  <img id="avatar" class="avatar" src="https://via.placeholder.com/140?text=Avatar" alt="Avatar" />
+  
+  <div class="field-label">Display Name:</div>
+  <div id="displayName" class="field-value nickname"></div>
 
-      <button onclick="window.location.href='index.html'">Back to Home</button>
+  <div class="field-label">Description:</div>
+  <div id="description" class="field-value"></div>
+</div>
 
-      <h2 style="text-align:center; margin-top:30px;">User's Pastes</h2>
-      <div id="userPastesList" style="max-height:250px; overflow-y:auto;"></div>
-    </div>
-  </div>
+<script>
+  const db = firebase.firestore();
 
-  <script>
-    const db = firebase.firestore();
-    const urlParams = new URLSearchParams(window.location.search);
-    const uid = urlParams.get("uid");
+  // Предполагается, что здесь получаем id пользователя из URL или другого способа
+  // Пример: ?uid=USER_ID
+  function getUIDFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('uid');
+  }
 
-    const avatar = document.getElementById("avatar");
-    const displayName = document.getElement
+  const uid = getUIDFromUrl();
+
+  if (!uid) {
+    alert('User ID not specified.');
+  } else {
+    db.collection('users').doc(uid).get()
+      .then(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          document.getElementById('avatar').src = data.avatarURL || 'https://via.placeholder.com/140?text=Avatar';
+          document.getElementById('displayName').textContent = data.displayName || 'No display name';
+          document.getElementById('description').textContent = data.description || 'No description provided.';
+        } else {
+          alert('Profile not found.');
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching profile:', err);
+        alert('Failed to load profile.');
+      });
+  }
+</script>
+
+</body>
+</html>
