@@ -1,262 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My Profile - Rustbin</title>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
-  <script src="firebase-config.js"></script>
-
-  <style>
-    body {
-      background-color: #0d0d0d;
-      color: white;
-      font-family: monospace;
-      margin: 0; padding: 0;
-      min-height: 100vh;
-    }
-    .container {
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #1a1a1a;
-      border-radius: 8px;
-      box-shadow: 0 0 15px #6a1b9a;
-    }
-    h1 {
-      text-align: center;
-      font-size: 2.5em;
-      background: linear-gradient(270deg, #6a1b9a, #fff);
-      background-size: 400% 400%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: gradientMove 4s ease infinite;
-      margin-bottom: 30px;
-    }
-    @keyframes gradientMove {
-      0% {background-position: 0% 50%;}
-      50% {background-position: 100% 50%;}
-      100% {background-position: 0% 50%;}
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
-    input[type="text"], select, textarea {
-      width: 100%;
-      background: #222;
-      color: #eee;
-      border: none;
-      border-radius: 5px;
-      padding: 8px;
-      font-family: monospace;
-      font-size: 16px;
-      margin-top: 5px;
-      box-sizing: border-box;
-    }
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-    #avatarPreview {
-      display: block;
-      margin: 20px auto;
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid #6a1b9a;
-      box-shadow: 0 0 10px #6a1b9a;
-      cursor: pointer;
-    }
-    button {
-      margin-top: 20px;
-      width: 100%;
-      background: #6a1b9a;
-      border: none;
-      color: white;
-      font-weight: bold;
-      padding: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.3s ease;
-    }
-    button:hover:not(:disabled) {
-      background: #8e44ad;
-    }
-    button:disabled {
-      background: #4a148c;
-      cursor: not-allowed;
-    }
-    .message {
-      margin-top: 15px;
-      text-align: center;
-      font-weight: bold;
-    }
-    .message.success {
-      color: #55ff55;
-    }
-    .message.error {
-      color: #ff5555;
-    }
-  </style>
+  <meta charset="UTF‑8">
+  <title>Профиль</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <div class="container">
-    <h1>My Profile</h1>
-
-    <img src="https://via.placeholder.com/140?text=Avatar" alt="Avatar" id="avatarPreview" title="Click to change avatar" />
-
-    <input type="file" id="avatarInput" accept="image/*" style="display:none;" />
-
-    <label for="displayName">Display Name / Nickname:</label>
-    <input type="text" id="displayName" maxlength="30" placeholder="Enter your display name" />
-
-    <label for="colorSelect">Nickname Color:</label>
-    <select id="colorSelect">
-      <option value="#FFFFFF">White</option>
-      <option value="#FF0000">Red</option>
-      <option value="#800080">Purple</option>
-      <option value="#008000">Green</option>
-      <option value="#FFFF00">Yellow</option>
-      <option value="#6a1b9a">Dark Violet</option>
-      <option value="#d1b3ff">Light Purple</option>
-    </select>
-
-    <label for="description">Description / About You:</label>
-    <textarea id="description" placeholder="Write something about yourself..."></textarea>
-
-    <button id="saveBtn">Save Profile</button>
-
-    <div id="message" class="message" style="display:none;"></div>
+  <div class="profile-container">
+    <h1>Профиль пользователя</h1>
+    <div class="profile-avatar">
+      <img id="avatarImg" src="default-avatar.png" alt="Аватар">
+      <input type="file" id="avatarInput" accept="image/*">
+    </div>
+    <div class="profile-nickname">
+      <label>Ник:</label>
+      <input type="text" id="nicknameInput">
+      <input type="color" id="nickColorInput" title="Цвет ника">
+    </div>
+    <div class="profile-description">
+      <label>Описание:</label>
+      <textarea id="descInput" rows="4"></textarea>
+    </div>
+    <button id="saveProfileBtn">Сохранить профиль</button>
   </div>
 
-  <script>
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-
-    const avatarPreview = document.getElementById('avatarPreview');
-    const avatarInput = document.getElementById('avatarInput');
-    const displayNameInput = document.getElementById('displayName');
-    const colorSelect = document.getElementById('colorSelect');
-    const descriptionInput = document.getElementById('description');
-    const saveBtn = document.getElementById('saveBtn');
-    const messageDiv = document.getElementById('message');
-
-    let currentUser = null;
-    let currentAvatarFile = null;
-
-    // Клик по аватарке открывает выбор файла
-    avatarPreview.addEventListener('click', () => {
-      avatarInput.click();
-    });
-
-    // Превью выбранного файла
-    avatarInput.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (file) {
-        currentAvatarFile = file;
-        const reader = new FileReader();
-        reader.onload = ev => {
-          avatarPreview.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // Загрузка данных профиля
-    function loadProfile() {
-      if (!currentUser) return;
-
-      db.collection('users').doc(currentUser.uid).get()
-        .then(doc => {
-          if (!doc.exists) {
-            // Если нет данных, установить дефолт
-            avatarPreview.src = 'https://via.placeholder.com/140?text=Avatar';
-            displayNameInput.value = '';
-            colorSelect.value = '#FFFFFF';
-            descriptionInput.value = '';
-            return;
-          }
-          const data = doc.data();
-          avatarPreview.src = data.avatarURL || 'https://via.placeholder.com/140?text=Avatar';
-          displayNameInput.value = data.displayName || '';
-          colorSelect.value = data.color || '#FFFFFF';
-          descriptionInput.value = data.description || '';
-        })
-        .catch(err => {
-          showMessage('Error loading profile', true);
-          console.error(err);
-        });
-    }
-
-    // Показываем сообщение
-    function showMessage(text, isError = false) {
-      messageDiv.style.display = 'block';
-      messageDiv.textContent = text;
-      if (isError) {
-        messageDiv.classList.remove('success');
-        messageDiv.classList.add('error');
-      } else {
-        messageDiv.classList.remove('error');
-        messageDiv.classList.add('success');
-      }
-    }
-
-    // Сохраняем профиль
-    saveBtn.addEventListener('click', async () => {
-      if (!currentUser) return;
-      saveBtn.disabled = true;
-      showMessage('', false);
-
-      try {
-        let avatarURL = avatarPreview.src;
-
-        // Если выбрали новый аватар - загружаем
-        if (currentAvatarFile) {
-          const ext = currentAvatarFile.name.split('.').pop();
-          const avatarRef = storage.ref(`avatars/${currentUser.uid}.${ext}`);
-          await avatarRef.put(currentAvatarFile);
-          avatarURL = await avatarRef.getDownloadURL();
-        }
-
-        await db.collection('users').doc(currentUser.uid).set({
-          displayName: displayNameInput.value.trim(),
-          color: colorSelect.value,
-          description: descriptionInput.value.trim(),
-          avatarURL: avatarURL,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        showMessage('Profile saved successfully!');
-        currentAvatarFile = null;
-      } catch (e) {
-        console.error(e);
-        showMessage('Error saving profile', true);
-      } finally {
-        saveBtn.disabled = false;
-      }
-    });
-
-    // Авторизация и загрузка профиля
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        currentUser = user;
-        loadProfile();
-      } else {
-        window.location.href = 'login.html'; // если не залогинен - редирект на логин
-      }
-    });
-  </script>
-
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="profile-script.js"></script>
 </body>
 </html>
