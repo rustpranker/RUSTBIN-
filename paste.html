@@ -13,38 +13,85 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    body {
-      background-color: #000;
-      color: white;
-      font-family: Arial, sans-serif;
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+    html, body {
       margin: 0; 
-      padding: 20px;
-      max-width: 700px;
-      margin-left: auto;
-      margin-right: auto;
+      padding: 0;
+      height: 100%;
+      font-family: 'Fira Code', monospace;
+      background: linear-gradient(270deg, #001f7f, #000000);
+      background-size: 400% 400%;
+      animation: bgGradient 8s ease infinite;
+      color: white;
+      overflow-x: hidden;
+      position: relative;
     }
+    @keyframes bgGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    canvas#backgroundCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
     .back-button {
-      background-color: red;
+      position: relative;
+      z-index: 1;
+      background-color: #8e44ad;
       border: none;
       padding: 12px 24px;
       color: white;
       font-weight: bold;
       cursor: pointer;
       border-radius: 6px;
-      margin-bottom: 25px;
+      margin-bottom: 30px;
       font-family: monospace;
       transition: background-color 0.3s;
-      box-shadow: 0 0 10px red;
+      box-shadow: 0 0 10px #8e44ad;
     }
     .back-button:hover {
-      background-color: #c00;
-      box-shadow: 0 0 15px #c00;
+      background-color: #732d91;
+      box-shadow: 0 0 15px #732d91;
     }
-    h1 {
-      font-size: 36px;
-      margin-bottom: 12px;
+
+    #paste-container {
+      position: relative;
+      z-index: 1;
+      background-color: #111;
+      width: 90vw;
+      max-width: 900px;
+      height: 75vh;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #8e44ad;
+      padding: 30px 40px;
+      overflow-y: auto;
+      user-select: text;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #paste-container h1 {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
       font-weight: bold;
-      font-family: monospace;
       background: linear-gradient(270deg, #8e44ad, #ffffff);
       background-size: 400% 400%;
       -webkit-background-clip: text;
@@ -52,44 +99,115 @@
       animation: gradientMove 4s ease infinite;
       user-select: none;
     }
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    .author {
+
+    #paste-container .author {
       color: #ff5555;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       font-style: italic;
-      font-family: monospace;
+      font-size: 1.1rem;
       user-select: none;
-    }
-    .content {
-      background-color: #111;
-      padding: 20px;
-      border-radius: 8px;
-      white-space: pre-wrap;
       font-family: monospace;
-      font-size: 16px;
-      line-height: 1.5;
-      box-shadow: 0 0 15px #8e44ad;
-      user-select: text;
     }
+
+    #paste-container pre.content {
+      white-space: pre-wrap;
+      font-family: 'Fira Code', monospace;
+      font-size: 1.2rem;
+      line-height: 1.6;
+      flex-grow: 1;
+      margin: 0;
+      color: #eee;
+      user-select: text;
+      overflow-wrap: break-word;
+    }
+
     .error {
       color: #dc3545;
       font-weight: bold;
-      font-size: 20px;
+      font-size: 1.5rem;
       font-family: monospace;
       text-align: center;
       margin-top: 40px;
+      user-select: none;
     }
   </style>
 </head>
 <body>
 
+  <canvas id="backgroundCanvas"></canvas>
+
   <button class="back-button" onclick="goHome()">← Back to Home</button>
 
   <div id="paste-container">Loading paste...</div>
+
+  <script>
+    // Фиолетовые снежинки
+    (() => {
+      const canvas = document.getElementById('backgroundCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      const flakesCount = 120;
+      const flakes = [];
+
+      function random(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      class Flake {
+        constructor() {
+          this.x = random(0, width);
+          this.y = random(0, height);
+          this.radius = random(1, 3);
+          this.speedY = random(0.3, 1);
+          this.alpha = random(0.1, 0.8);
+          this.speedX = random(-0.3, 0.3);
+          this.color = `rgba(142, 68, 173, ${this.alpha})`;
+        }
+        update() {
+          this.y += this.speedY;
+          this.x += this.speedX;
+          if (this.y > height) {
+            this.x = random(0, width);
+            this.y = -this.radius;
+          }
+          if (this.x > width) this.x = 0;
+          else if (this.x < 0) this.x = width;
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.fillStyle = this.color;
+          ctx.shadowColor = 'rgba(142, 68, 173, 0.7)';
+          ctx.shadowBlur = 8;
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      for (let i = 0; i < flakesCount; i++) {
+        flakes.push(new Flake());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        flakes.forEach(flake => {
+          flake.update();
+          flake.draw();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
+  </script>
 
   <script>
     const db = firebase.firestore();
@@ -128,7 +246,6 @@
           const data = doc.data();
           const container = document.getElementById('paste-container');
 
-          // Защищаем от XSS и показываем красиво
           const safeTitle = escapeHtml(data.title) || 'Untitled';
           const safeContent = escapeHtml(data.content) || '';
           const author = data.anonymous ? 'Anonymous' : (data.username || 'Unknown');
