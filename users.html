@@ -12,21 +12,22 @@
 
   <style>
     body {
-      background-color: #0d0d0d;
+      background-color: #0b0b13;
       color: #fff;
       font-family: monospace;
       margin: 0;
       padding: 0;
+      overflow-x: hidden;
     }
 
     /* Навбар */
     .navbar {
-      background-color: #111;
+      background-color: #120021;
       padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2px solid #ff0000;
+      border-bottom: 2px solid #9b59b6;
     }
     .navbar a {
       color: #fff;
@@ -35,7 +36,7 @@
       font-weight: bold;
     }
     .navbar a:hover {
-      color: #9370DB;
+      color: #c77dff;
     }
 
     /* Заголовок */
@@ -46,7 +47,7 @@
     .gradient-text {
       font-size: 38px;
       font-weight: bold;
-      background: linear-gradient(270deg, red, white, red);
+      background: linear-gradient(270deg, #c77dff, #ffffff, #c77dff);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -68,16 +69,16 @@
       gap: 15px;
     }
     .user-card {
-      background-color: #1a1a1a;
-      border: 1px solid #333;
-      border-left: 4px solid #ff0000;
+      background-color: #1a102b;
+      border: 1px solid #3a2f4f;
+      border-left: 4px solid #c77dff;
       padding: 15px;
       border-radius: 6px;
       transition: 0.2s;
       cursor: pointer;
     }
     .user-card:hover {
-      background-color: #222;
+      background-color: #251437;
       transform: translateY(-2px);
     }
     .user-name {
@@ -87,7 +88,31 @@
       text-decoration: none;
     }
     .user-name:hover {
-      color: red;
+      color: #c77dff;
+    }
+
+    /* Снежинки */
+    .snowflake {
+      position: fixed;
+      top: -10px;
+      color: #fff;
+      font-size: 1em;
+      pointer-events: none;
+      animation-name: fall, drift;
+      animation-timing-function: linear, ease-in-out;
+    }
+    @keyframes fall {
+      to {
+        transform: translateY(110vh);
+      }
+    }
+    @keyframes drift {
+      50% {
+        transform: translateX(20px);
+      }
+      100% {
+        transform: translateX(-20px);
+      }
     }
   </style>
 </head>
@@ -150,6 +175,21 @@
           console.error(err);
         });
     }
+
+    function createSnowflake() {
+      const snowflake = document.createElement('div');
+      snowflake.classList.add('snowflake');
+      snowflake.textContent = '❄';
+      snowflake.style.left = Math.random() * window.innerWidth + 'px';
+      snowflake.style.fontSize = Math.random() * 10 + 10 + 'px';
+      snowflake.style.opacity = Math.random();
+      const fallDuration = Math.random() * 5 + 5;
+      snowflake.style.animationDuration = fallDuration + 's, 3s';
+      document.body.appendChild(snowflake);
+      setTimeout(() => snowflake.remove(), fallDuration * 1000);
+    }
+
+    setInterval(createSnowflake, 150);
 
     window.onload = loadUsers;
   </script>
