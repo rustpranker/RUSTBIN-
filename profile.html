@@ -13,7 +13,6 @@
 <script src="firebase-config.js"></script>
 
 <style>
-  /* Базовые стили */
   body {
     margin: 0;
     font-family: 'Fira Code', monospace;
@@ -27,7 +26,7 @@
   .main-content {
     max-width: 800px;
     margin: 40px auto;
-    background: rgba(30, 0, 60, 0.85); /* чуть прозрачный фиолетовый */
+    background: rgba(30, 0, 60, 0.85);
     padding: 30px 25px;
     border-radius: 12px;
     box-shadow: 0 0 30px #8e44adaa;
@@ -98,15 +97,6 @@
     background: #111;
   }
 
-  #avatarInput {
-    margin-top: 10px;
-    color: #ddd;
-    cursor: pointer;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
   button {
     margin-top: 30px;
     width: 100%;
@@ -143,7 +133,6 @@
     background-color: #666;
   }
 
-  /* Белые падающие точки - звездочки */
   .star {
     position: fixed;
     top: -10px;
@@ -172,7 +161,6 @@
 </head>
 <body>
 
-<!-- Белые падающие точки (звёздочки) -->
 <script>
   const starCount = 40;
   for (let i = 0; i < starCount; i++) {
@@ -190,7 +178,6 @@
 <div class="main-content">
   <h1>My Profile</h1>
   <img id="avatar" class="avatar" src="https://via.placeholder.com/160?text=Avatar" alt="Avatar" />
-  <input type="file" id="avatarInput" accept="image/*" />
 
   <label for="displayNameInput">Display Name:</label>
   <input type="text" id="displayNameInput" placeholder="Your display name" />
@@ -210,10 +197,8 @@
 <script>
   const auth = firebase.auth();
   const db = firebase.firestore();
-  const storage = firebase.storage();
 
   const avatarImg = document.getElementById('avatar');
-  const avatarInput = document.getElementById('avatarInput');
   const displayNameInput = document.getElementById('displayNameInput');
   const colorSelect = document.getElementById('colorSelect');
   const descriptionInput = document.getElementById('descriptionInput');
@@ -222,22 +207,10 @@
   const successMessage = document.getElementById('successMessage');
 
   let currentUser = null;
-  let avatarFile = null;
 
   backHomeBtn.onclick = () => {
     window.location.href = 'index.html';
   };
-
-  avatarInput.addEventListener('change', e => {
-    if (e.target.files && e.target.files[0]) {
-      avatarFile = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        avatarImg.src = event.target.result;
-      };
-      reader.readAsDataURL(avatarFile);
-    }
-  });
 
   auth.onAuthStateChanged(user => {
     if (!user) {
@@ -269,24 +242,10 @@
     successMessage.style.display = 'none';
 
     try {
-      let avatarURL = avatarImg.src;
-
-      if (avatarFile) {
-        const storageRef = storage.ref();
-        const avatarRef = storageRef.child(`avatars/${currentUser.uid}_${Date.now()}`);
-        const uploadTaskSnapshot = await avatarRef.put(avatarFile);
-        avatarURL = await uploadTaskSnapshot.ref.getDownloadURL();
-      } else {
-        if (avatarURL.startsWith('data:')) {
-          avatarURL = 'https://via.placeholder.com/160?text=Avatar';
-        }
-      }
-
       await db.collection('users').doc(currentUser.uid).set({
         displayName: displayNameInput.value.trim(),
         color: colorSelect.value,
         description: descriptionInput.value.trim(),
-        avatarURL: avatarURL,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
 
@@ -294,8 +253,6 @@
       setTimeout(() => {
         successMessage.style.display = 'none';
       }, 3000);
-
-      avatarFile = null;
 
     } catch (e) {
       alert('Error saving profile: ' + e.message);
