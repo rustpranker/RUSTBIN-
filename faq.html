@@ -1,24 +1,223 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FAQ - Rustbin</title>
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>FAQ - Rustbin</title>
 
-  <style>
-    /* Общие стили и фон */
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background: #0d0d0d;
-      font-family: monospace, monospace;
-      color: white;
-      overflow-x: hidden;
-      position: relative;
-    }
+        <style>
+          /* Общие стили и фон */
+          body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #0d0d0d;
+            font-family: monospace, monospace;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+          }
 
-    /* Заголовок с анимацией градиента */
-    h1.gradient-title {
-      font-size: 3rem;
-      font-weight: bold;
+          /* Заголовок с анимацией градиента */
+          h1.gradient-title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 40px 20px 30px;
+            background: linear-gradient(270deg, #9370DB, #ffffff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientMove 4s ease infinite;
+            user-select: none;
+          }
+          @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+
+          /* Контейнер FAQ */
+          .faq-container {
+            max-width: 800px;
+            margin: 0 auto 50px;
+            padding: 0 15px;
+          }
+
+          /* Вопросы */
+          .faq-item {
+            background-color: #1a1a1a;
+            border-left: 4px solid #9370DB;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 15px 20px;
+            user-select: none;
+            transition: background-color 0.3s ease;
+          }
+          .faq-item:hover {
+            background-color: #2a2a2a;
+          }
+
+          /* Текст вопроса */
+          .faq-question {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: white;
+          }
+
+          /* Текст ответа (скрытый по умолчанию) */
+          .faq-answer {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #ff69b4; /* розовый */
+            line-height: 1.4;
+            display: none;
+            user-select: text;
+          }
+
+          /* Показываем ответ, когда открыт */
+          .faq-item.open .faq-answer {
+            display: block;
+          }
+
+          /* Снежинки канвас на заднем плане */
+          canvas#backgroundCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+          }
+
+          /* Ссылка назад */
+          .back-home {
+            display: block;
+            max-width: 800px;
+            margin: 0 auto 40px;
+            text-align: center;
+          }
+          .back-home a {
+            color: #9370DB;
+            text-decoration: none;
+            font-weight: bold;
+            border: 2px solid #9370DB;
+            padding: 8px 20px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            user-select: none;
+          }
+          .back-home a:hover {
+            background-color: #9370DB;
+            color: white;
+          }
+        </style>
+      </head>
+      <body>
+
+        <canvas id="backgroundCanvas"></canvas>
+
+        <h1 class="gradient-title">FAQ RUSTBIN</h1>
+
+        <div class="faq-container">
+          <div class="faq-item">
+            <div class="faq-question">What is rustbin ?</div>
+            <div class="faq-answer">rustbin - oficial copy of doxbin by RUSTPRANK, site created for uppload info about another people</div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">How to submit a request for website development?</div>
+            <div class="faq-answer">send friend request owner site: discord wg2d</div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">Other projects by RUSTPRANK</div>
+            <div class="faq-answer">soon...</div>
+          </div>
+        </div>
+
+        <div class="back-home">
+          <a href="index.html">← Back to Home</a>
+        </div>
+
+        <script>
+          // Снежинки анимация
+          (() => {
+            const canvas = document.getElementById('backgroundCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            const flakesCount = 120;
+            const flakes = [];
+
+            function random(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            function resize() {
+              width = window.innerWidth;
+              height = window.innerHeight;
+              canvas.width = width;
+              canvas.height = height;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            class Flake {
+              constructor() {
+                this.x = random(0, width);
+                this.y = random(0, height);
+                this.radius = random(1, 3);
+                this.speedY = random(0.5, 1.5);
+                this.alpha = random(0.1, 0.8);
+                this.swing = random(0.5, 1.5);
+                this.step = random(0, Math.PI * 2);
+              }
+              update() {
+                this.y += this.speedY;
+                this.step += 0.02;
+                this.x += Math.sin(this.step) * this.swing;
+                if (this.y > height) {
+                  this.x = random(0, width);
+                  this.y = -this.radius;
+                  this.radius = random(1, 3);
+                  this.speedY = random(0.5, 1.5);
+                  this.alpha = random(0.1, 0.8);
+                  this.swing = random(0.5, 1.5);
+                  this.step = random(0, Math.PI * 2);
+                }
+              }
+              draw() {
+                ctx.beginPath();
+                ctx.fillStyle = `rgba(147, 112, 219, ${this.alpha})`;
+                ctx.shadowColor = 'rgba(147, 112, 219, 0.7)';
+                ctx.shadowBlur = 8;
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+              }
+            }
+
+            for(let i = 0; i < flakesCount; i++) {
+              flakes.push(new Flake());
+            }
+
+            function animate() {
+              ctx.clearRect(0, 0, width, height);
+              flakes.forEach(flake => {
+                flake.update();
+                flake.draw();
+              });
+              requestAnimationFrame(animate);
+            }
+            animate();
+          })();
+
+          // Разворачивание/сворачивание FAQ
+          document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('click', () => {
+              item.classList.toggle('open');
+            });
+          });
+        </script>
+      </body>
+      </html>
