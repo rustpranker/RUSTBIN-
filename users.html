@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Users - Rustbin</title>
+  <link rel="stylesheet" href="style.css" />
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -13,175 +14,114 @@
   <script src="firebase-config.js"></script>
 
   <style>
-    body, html {
-      margin: 0; padding: 0; height: 100%;
-      background: #000;
-      overflow-x: hidden;
-      font-family: Arial, sans-serif;
+    body {
+      background-color: #000;
       color: white;
-      position: relative;
+      font-family: Arial, sans-serif;
+      margin: 0; 
+      padding: 0;
     }
-    canvas#backgroundCanvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-    }
-    .main-content {
-      position: relative;
-      z-index: 1;
-      min-height: 100vh;
+    .navbar {
+      background-color: #111;
+      padding: 10px 20px;
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
     }
-    h1 {
-      font-size: 40px;
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin: 0 10px;
       font-weight: bold;
-      margin-bottom: 25px;
-      background: linear-gradient(270deg, #8e44ad, #ffffff);
+    }
+    .navbar a:hover {
+      color: red;
+    }
+
+    .title-container {
+      text-align: center;
+      margin-top: 50px;
+    }
+    .gradient-text {
+      font-size: 48px;
+      font-weight: bold;
+      background: linear-gradient(270deg, red, white, red);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: gradientMove 4s ease infinite;
-      user-select: none;
     }
     @keyframes gradientMove {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    #users-list {
-      width: 100%;
-      max-width: 700px;
+
+    .users-list {
+      max-width: 600px;
+      margin: 40px auto;
       background-color: #111;
-      border-radius: 8px;
+      border: 1px solid #333;
+      border-left: 5px solid red;
+      border-radius: 4px;
       padding: 20px;
-      box-shadow: 0 0 20px #8e44ad;
-      box-sizing: border-box;
-      font-family: monospace;
       font-weight: bold;
     }
+
     .user-item {
-      padding: 12px 15px;
+      padding: 10px 15px;
       border-bottom: 1px solid #333;
-      cursor: pointer;
-      transition: background-color 0.3s;
+      cursor: default;
+      user-select: none;
+      color: white;
     }
-    .user-item:hover {
-      background-color: #4a148c;
+    .user-item:last-child {
+      border-bottom: none;
     }
   </style>
 </head>
 <body>
-  <canvas id="backgroundCanvas"></canvas>
+  <nav class="navbar">
+    <div class="nav-left">
+      <a href="index.html">Home</a>
+      <a href="create.html">Add Paste</a>
+      <a href="users.html">Users</a>
+    </div>
+    <div class="nav-right" id="auth-buttons">
+      <a href="register.html">Register</a>
+      <a href="login.html">Login</a>
+    </div>
+  </nav>
 
-  <div class="main-content">
-    <h1>Users</h1>
-    <div id="users-list">Loading users...</div>
+  <div class="title-container">
+    <h1 class="gradient-text">Registered Users</h1>
   </div>
 
+  <div id="users-list" class="users-list">Loading users...</div>
+
   <script>
-    // Падающие точки, оставляю без изменений
-    (() => {
-      const canvas = document.getElementById('backgroundCanvas');
-      const ctx = canvas.getContext('2d');
-      let width, height;
-      const dotsCount = 100;
-      const dots = [];
-
-      function random(min, max) {
-        return Math.random() * (max - min) + min;
-      }
-
-      function resize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
-      }
-      window.addEventListener('resize', resize);
-      resize();
-
-      class Dot {
-        constructor() {
-          this.x = random(0, width);
-          this.y = random(0, height);
-          this.radius = random(1, 3);
-          this.speedY = random(0.5, 1.5);
-          this.alpha = random(0.1, 0.8);
-        }
-        update() {
-          this.y += this.speedY;
-          if (this.y > height) {
-            this.x = random(0, width);
-            this.y = -this.radius;
-            this.radius = random(1, 3);
-            this.speedY = random(0.5, 1.5);
-            this.alpha = random(0.1, 0.8);
-          }
-        }
-        draw() {
-          ctx.beginPath();
-          ctx.fillStyle = `rgba(142, 68, 173, ${this.alpha})`;
-          ctx.shadowColor = 'rgba(142, 68, 173, 0.7)';
-          ctx.shadowBlur = 8;
-          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.closePath();
-        }
-      }
-
-      for(let i = 0; i < dotsCount; i++) {
-        dots.push(new Dot());
-      }
-
-      function animate() {
-        ctx.clearRect(0, 0, width, height);
-        dots.forEach(dot => {
-          dot.update();
-          dot.draw();
-        });
-        requestAnimationFrame(animate);
-      }
-      animate();
-    })();
-
-    // Загрузка пользователей из Firestore (без ролей)
     const db = firebase.firestore();
     const usersList = document.getElementById('users-list');
 
     function loadUsers() {
-      usersList.textContent = 'Loading users...';
-
-      db.collection('users').orderBy('createdAt', 'desc').get()
+      db.collection('users').get()
         .then(snapshot => {
           if (snapshot.empty) {
-            usersList.textContent = 'No users found.';
+            usersList.textContent = 'Пользователи не найдены.';
             return;
           }
-
           usersList.innerHTML = '';
-
           snapshot.forEach(doc => {
-            const data = doc.data();
-            const name = data.displayName || data.username || 'Unknown';
-
+            const user = doc.data();
             const div = document.createElement('div');
             div.className = 'user-item';
-            div.textContent = name;
-            div.onclick = () => {
-              window.location.href = `profile.html?uid=${doc.id}`;
-            };
+            div.textContent = user.username || '(no username)';
             usersList.appendChild(div);
           });
         })
-        .catch(error => {
-          console.error('Error loading users:', error);
-          usersList.textContent = 'Error loading users.';
+        .catch(err => {
+          usersList.textContent = 'Ошибка загрузки пользователей: ' + err.message;
+          console.error(err);
         });
     }
 
