@@ -1,89 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF‑8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>User Profile - Rustbin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Users - Rustbin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
   <script src="firebase-config.js"></script>
+
   <style>
-    /* (Полностью совпадает с profile.html — снежинки, фон, стили элементов) */
-    /* Для экономии места — предположим стили такие же, как в profile.html */
+    body {
+      margin: 0;
+      font-family: 'Fira Code', monospace;
+      background: #000;
+      color: white;
+    }
+
+    .main-content {
+      padding: 30px 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+      background: linear-gradient(270deg, #8e44ad, #ffffff);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 4s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .user-list {
+      margin-top: 30px;
+    }
+
+    .user-entry {
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #111;
+      border-left: 5px solid #8e44ad;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .user-entry:hover {
+      background: #1b1b1b;
+    }
+
+    .user-name {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .user-desc {
+      font-size: 0.9em;
+      color: #bbb;
+    }
   </style>
 </head>
 <body>
-  <script>
-    /* Снежинки — как в profile.html */
-  </script>
   <div class="main-content">
-    <h1>User Profile</h1>
-    <div class="profile-container">
-      <img id="avatar" class="avatar" src="" alt="Avatar"
-           onerror="this.src='https://via.placeholder.com/150?text=No+Avatar'">
-      <label>Display Name:</label><input type="text" id="displayNameInput" readonly>
-      <label>Nickname Color:</label><input type="color" id="colorSelect" disabled>
-      <label>Description:</label>
-      <textarea id="descriptionInput" readonly></textarea>
-      <div class="info" id="registrationDate">Registration Date: --</div>
-      <button id="backHomeBtn" type="button">Back to Home</button>
-      <h2 style="text-align:center; margin-top:30px;">User's Pastes</h2>
-      <div id="userPastesList" style="max-height:250px; overflow-y:auto;"></div>
-    </div>
+    <h1>All Users</h1>
+    <div class="user-list" id="userList">Loading...</div>
   </div>
+
   <script>
-    /* JS логика — почти как в profile.html, но без возможности редактирования и загрузки */
-    const auth = firebase.auth();
     const db = firebase.firestore();
+    const userList = document.getElementById("userList");
 
-    const avatarImg = document.getElementById('avatar');
-    const displayNameInput = document.getElementById('displayNameInput');
-    const colorSelect = document.getElementById('colorSelect');
-    const descriptionInput = document.getElementById('descriptionInput');
-    const registrationDateDiv = document.getElementById('registrationDate');
-    const backHomeBtn = document.getElementById('backHomeBtn');
+    db.collection("users").get().then(snapshot => {
+      if (snapshot.empty) {
+        userList.textContent = "No users found.";
+        return;
+      }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const viewedUID = urlParams.get("uid");
-
-    backHomeBtn.addEventListener('click', () => window.location.href = 'index.html');
-
-    function loadUserProfile(uid) {
-      db.collection('users').doc(uid).get().then(doc => {
-        if (!doc.exists) return registrationDateDiv.textContent = 'User not found.', void 0;
+      userList.innerHTML = "";
+      snapshot.forEach(doc => {
         const data = doc.data();
-        avatarImg.src = data.avatarURL;
-        displayNameInput.value = data.displayName || '';
-        colorSelect.value = data.color || '#FFFFFF';
-        descriptionInput.value = data.description || '';
-        registrationDateDiv.textContent = data.createdAt?.toDate
-          ? `Registration Date: ${data.createdAt.toDate().toLocaleDateString()}`
-          : 'Registration Date: --';
-        loadUserPastes(uid);
-      }).catch(console.error);
-    }
+        const uid = doc.id;
 
-    function loadUserPastes(uid) {
-      const pastes = document.getElementById('userPastesList');
-      db.collection('pastes').where('ownerId','==',uid).orderBy('createdAt','desc').limit(10).get()
-        .then(snapshot => {
-          if (snapshot.empty) return pastes.textContent = 'No pastes found.';
-          pastes.innerHTML = '';
-          snapshot.forEach(d => {
-            const div = document.createElement('div');
-            div.textContent = d.data().title || '(Untitled)';
-            div.onclick = () => window.location.href = `paste.html?id=${d.id}`;
-            pastes.appendChild(div);
-          });
-        }).catch(() => pastes.textContent = 'Error loading pastes.');
-    }
+        const entry = document.createElement("div");
+        entry.className = "user-entry";
+        entry.style.borderColor = data.color || "#8e44ad";
+        entry.innerHTML = `
+          <div class="user-name" style="color: ${data.color || '#fff'}">${data.displayName || 'Unnamed'}</div>
+          <div class="user-desc">${data.description || 'No description.'}</div>
+        `;
 
-    auth.onAuthStateChanged(() => {
-      if (viewedUID) loadUserProfile(viewedUID);
-      else window.location.href = 'index.html';
+        entry.onclick = () => {
+          window.location.href = `profiles.html?uid=${uid}`;
+        };
+
+        userList.appendChild(entry);
+      });
+    }).catch(error => {
+      console.error("Error loading users:", error);
+      userList.textContent = "Error loading users.";
     });
   </script>
 </body>
