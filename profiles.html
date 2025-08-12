@@ -1,106 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF‑8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>User Profile - Rustbin</title>
-
-  <!-- Firebase -->
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-
   <style>
     body {
-      background-color: #0d0d0d;
+      margin: 0;
+      font-family: 'Fira Code', monospace;
+      background: #000;
       color: white;
-      font-family: monospace;
-      margin: 0; padding: 0;
-      min-height: 100vh;
+      overflow-x: hidden;
     }
-    .container {
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #1a1a1a;
-      border-radius: 8px;
-      box-shadow: 0 0 15px #6a1b9a;
+
+    .main-content {
+      padding: 30px 20px;
+      max-width: 800px;
+      margin: auto;
     }
+
     h1 {
       text-align: center;
       font-size: 2.5em;
-      background: linear-gradient(270deg, #6a1b9a, #d1b3ff);
+      background: linear-gradient(270deg, #8e44ad, #ffffff);
       background-size: 400% 400%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: gradientMove 4s ease infinite;
-      margin-bottom: 30px;
     }
+
     @keyframes gradientMove {
-      0% {background-position: 0% 50%;}
-      50% {background-position: 100% 50%;}
-      100% {background-position: 0% 50%;}
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
+
+    .profile-container {
+      background: #111;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 0 20px #8e44ad;
+    }
+
     .avatar {
       display: block;
-      width: 140px;
-      height: 140px;
+      width: 150px;
+      height: 150px;
       border-radius: 50%;
       object-fit: cover;
-      border: 3px solid #6a1b9a;
-      box-shadow: 0 0 10px #6a1b9a;
+      border: 3px solid #8e44ad;
       margin: 0 auto 20px;
     }
-    .info-label {
+
+    .label {
+      margin-top: 10px;
       font-weight: bold;
-      margin-top: 15px;
     }
-    .info-text {
-      margin-top: 6px;
-      font-size: 16px;
-      color: #d1b3ff;
-      white-space: pre-wrap;
-      word-wrap: break-word;
+
+    .info-field {
+      background: #222;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 5px;
+      color: white;
+    }
+
+    .info {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #bbb;
+      text-align: center;
+    }
+
+    .paste-entry {
+      padding: 10px;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+    }
+
+    .paste-entry:hover {
+      color: #8e44ad;
+    }
+
+    button {
+      margin-top: 20px;
+      background-color: #8e44ad;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #6a1b9a;
     }
   </style>
 </head>
 <body>
-
-  <div class="container">
+  <div class="main-content">
     <h1>User Profile</h1>
+    <div class="profile-container">
+      <img id="avatar" class="avatar" src="" alt="Avatar" onerror="this.src='https://via.placeholder.com/150?text=No+Avatar'">
+      <div class="label">Nickname:</div>
+      <div class="info-field" id="displayName"></div>
 
-    <img src="https://via.placeholder.com/140?text=Avatar" alt="Avatar" id="avatar" class="avatar" />
+      <div class="label">Description:</div>
+      <div class="info-field" id="description"></div>
 
-    <div class="info-label">Display Name:</div>
-    <div id="displayName" class="info-text">(loading...)</div>
+      <div class="label">Registration Date:</div>
+      <div class="info-field" id="registrationDate">--</div>
 
-    <div class="info-label">Description:</div>
-    <div id="description" class="info-text">(loading...)</div>
+      <button onclick="window.location.href='index.html'">Back to Home</button>
 
+      <h2 style="text-align:center; margin-top:30px;">User's Pastes</h2>
+      <div id="userPastesList" style="max-height:250px; overflow-y:auto;"></div>
+    </div>
   </div>
 
   <script>
     const db = firebase.firestore();
+    const urlParams = new URLSearchParams(window.location.search);
+    const uid = urlParams.get("uid");
 
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-
-    const userId = getQueryParam('id');
-
-    if (!userId) {
-      alert('User ID not specified');
-      window.location.href = 'users.html';
-    }
-
-    function loadUserProfile(uid) {
-      db.collection('users').doc(uid).get()
-        .then(doc => {
-          if (!doc.exists) {
-            alert('User not found');
-            window.location.href = 'users.html';
-            return;
-          }
-          const data = doc.data();
-          document.getElementById('avatar').src = data.avatarURL || 'https://via.placeholder.com/140?text=Avatar';
+    const avatar = document.getElementById("avatar");
+    const displayName = document.getElement
